@@ -8,6 +8,10 @@ class TransactionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final transactionViewModel = Provider.of<TransactionViewModel>(context);
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      transactionViewModel.fetchTransactions();
+    });
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
@@ -98,11 +102,20 @@ class TransactionScreen extends StatelessWidget {
             SizedBox(height: 16),
             // Transaction List
             Expanded(
-              child: ListView(
-                children: [
-                  _buildTransactionSection(context, "April", transactionViewModel.getTransactionsByMonth("April")),
-                  _buildTransactionSection(context, "March", transactionViewModel.getTransactionsByMonth("March")),
-                ],
+              child: Consumer<TransactionViewModel>(
+                builder: (context, model, child) {
+                  if (model.transactions.isEmpty) {
+                    return Center(child: Text("No transactions available."));
+                  }
+
+                  return ListView.builder(
+                    itemCount: model.transactions.length,
+                    itemBuilder: (context, index) {
+                      final transaction = model.transactions[index];
+                      return _buildTransactionTile(context, transaction);
+                    },
+                  );
+                },
               ),
             ),
           ],
@@ -111,24 +124,12 @@ class TransactionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTransactionSection(BuildContext context, String month, List<Transaction> transactions) {
-    if (transactions.isEmpty) return SizedBox.shrink();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          month,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-        ),
-        SizedBox(height: 8),
-        ...transactions.map((transaction) => _buildTransactionTile(context, transaction)).toList(),
-        SizedBox(height: 16),
-      ],
-    );
-  }
-
   Widget _buildTransactionTile(BuildContext context, Transaction transaction) {
+    final transactionViewModel = Provider.of<TransactionViewModel>(context, listen: false);
+
+    // Obtén el nombre de la categoría directamente
+    final categoryName = transactionViewModel.getCategoryName(transaction.category);
+
     return Column(
       children: [
         ListTile(
@@ -139,7 +140,7 @@ class TransactionScreen extends StatelessWidget {
               color: transaction.type == "income" ? Colors.green : Colors.red,
             ),
           ),
-          title: Text(transaction.category),
+          title: Text(categoryName), // Muestra el nombre de la categoría aquí
           subtitle: Text("${transaction.date.toString()} - ${transaction.type}"),
           trailing: Text(
             "S/ ${transaction.amount.toStringAsFixed(2)}",
