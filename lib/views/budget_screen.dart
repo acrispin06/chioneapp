@@ -13,7 +13,7 @@ class BudgetScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.green,
         elevation: 0,
-        title: Text("Account Balance", style: TextStyle(color: Colors.white)),
+        title: Text("Budgets", style: TextStyle(color: Colors.white)),
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
@@ -53,7 +53,7 @@ class BudgetScreen extends StatelessWidget {
                     SizedBox(height: 8),
                     Center(
                       child: Text(
-                        "S/ 7,783.00",
+                        "S/ ${transactionViewModel.totalBalance.toStringAsFixed(2)}",
                         style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green),
                       ),
                     ),
@@ -66,7 +66,7 @@ class BudgetScreen extends StatelessWidget {
                           children: [
                             Text("Total Balance", style: TextStyle(fontSize: 14)),
                             Text(
-                              "S/ 7,783.00",
+                              "S/ ${transactionViewModel.totalBalance.toStringAsFixed(2)}",
                               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
                             ),
                           ],
@@ -76,7 +76,7 @@ class BudgetScreen extends StatelessWidget {
                           children: [
                             Text("Total Expense", style: TextStyle(fontSize: 14)),
                             Text(
-                              "- S/ 1,187.40",
+                              "- S/ ${transactionViewModel.totalExpense.toStringAsFixed(2)}",
                               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red),
                             ),
                           ],
@@ -88,17 +88,22 @@ class BudgetScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           child: LinearProgressIndicator(
-                            value: 0.3,
+                            value: transactionViewModel.totalExpense / transactionViewModel.goal,
                             backgroundColor: Colors.grey.shade300,
                             color: Colors.green,
                           ),
                         ),
                         SizedBox(width: 8),
-                        Text("S/ 20,000.00", style: TextStyle(fontSize: 14, color: Colors.grey)),
+                        Text(
+                          "S/ ${transactionViewModel.goal.toStringAsFixed(2)}",
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
                       ],
                     ),
                     SizedBox(height: 8),
-                    Text("30% Of Your Expenses, Looks Good."),
+                    Text(
+                      "${((transactionViewModel.totalExpense / transactionViewModel.goal) * 100).toStringAsFixed(1)}% Of Your Expenses, Looks Good.",
+                    ),
                   ],
                 ),
               ),
@@ -108,8 +113,20 @@ class BudgetScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildSummaryCard(context, "Income", "S/ 4,000.00", Icons.arrow_downward, Colors.green),
-                _buildSummaryCard(context, "Expense", "S/ 1,187.40", Icons.arrow_upward, Colors.red),
+                _buildSummaryCard(
+                  context,
+                  "Income",
+                  "S/ ${transactionViewModel.totalIncome.toStringAsFixed(2)}",
+                  Icons.arrow_downward,
+                  Colors.green,
+                ),
+                _buildSummaryCard(
+                  context,
+                  "Expense",
+                  "S/ ${transactionViewModel.totalExpense.toStringAsFixed(2)}",
+                  Icons.arrow_upward,
+                  Colors.red,
+                ),
               ],
             ),
             SizedBox(height: 16),
