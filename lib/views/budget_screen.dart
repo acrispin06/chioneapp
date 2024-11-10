@@ -14,12 +14,6 @@ class BudgetScreen extends StatelessWidget {
         backgroundColor: Colors.green,
         elevation: 0,
         title: Text("Budgets", style: TextStyle(color: Colors.white)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
         actions: [
           IconButton(
             icon: Icon(Icons.notifications, color: Colors.white),
