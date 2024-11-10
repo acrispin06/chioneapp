@@ -18,10 +18,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _screens = [
     HomeContent(),
-    //ReportScreen(),
     TransactionScreen(),
     BudgetScreen(),
-    //GoalScreen(), // Aquí puedes usar una pantalla para el perfil o lo que corresponda
   ];
 
   void _onItemTapped(int index) {
@@ -70,6 +68,11 @@ class HomeContent extends StatelessWidget {
     final transactionViewModel = Provider.of<TransactionViewModel>(context);
     final userViewModel = Provider.of<UserViewModel>(context);
 
+    double totalBalance = userViewModel.getTotalBalance();
+    double totalExpense = transactionViewModel.getTotalExpense();
+    double weeklyIncome = transactionViewModel.getWeeklyIncome();
+    double weeklyFoodExpense = transactionViewModel.getWeeklyFoodExpense();
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -93,7 +96,7 @@ class HomeContent extends StatelessWidget {
                         children: [
                           Text("Total Balance", style: TextStyle(fontSize: 16)),
                           Text(
-                            "S/ 7,783.00",
+                            "S/ ${totalBalance.toStringAsFixed(2)}",
                             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green),
                           ),
                         ],
@@ -103,7 +106,7 @@ class HomeContent extends StatelessWidget {
                         children: [
                           Text("Total Expense", style: TextStyle(fontSize: 16)),
                           Text(
-                            "- S/ 1,187.40",
+                            "- S/ ${totalExpense.toStringAsFixed(2)}",
                             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.red),
                           ),
                         ],
@@ -115,7 +118,7 @@ class HomeContent extends StatelessWidget {
                     children: [
                       Expanded(
                         child: LinearProgressIndicator(
-                          value: 0.3,
+                          value: totalExpense / 20000.0,
                           backgroundColor: Colors.grey.shade300,
                           color: Colors.green,
                         ),
@@ -125,7 +128,7 @@ class HomeContent extends StatelessWidget {
                     ],
                   ),
                   SizedBox(height: 8),
-                  Text("30% Of Your Expenses, Looks Good."),
+                  Text("${(totalExpense / 20000 * 100).toStringAsFixed(1)}% Of Your Expenses, Looks Good."),
                 ],
               ),
             ),
@@ -155,7 +158,7 @@ class HomeContent extends StatelessWidget {
                       children: [
                         Text("Revenue Last Week", style: TextStyle(fontSize: 16)),
                         Text(
-                          "S/ 4,000.00",
+                          "S/ ${weeklyIncome.toStringAsFixed(2)}",
                           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
                         ),
                       ],
@@ -166,7 +169,7 @@ class HomeContent extends StatelessWidget {
                       children: [
                         Text("Food Last Week", style: TextStyle(fontSize: 16)),
                         Text(
-                          "- S/ 100.00",
+                          "- S/ ${weeklyFoodExpense.toStringAsFixed(2)}",
                           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.red),
                         ),
                       ],
@@ -193,6 +196,9 @@ class HomeContent extends StatelessWidget {
               itemCount: transactionViewModel.transactions.length,
               itemBuilder: (context, index) {
                 final transaction = transactionViewModel.transactions[index];
+                // Obtén el nombre de la categoría directamente
+                final categoryName = transactionViewModel.getCategoryName(transaction.category);
+
                 return ListTile(
                   leading: CircleAvatar(
                     backgroundColor: Colors.blue.shade100,
@@ -201,7 +207,7 @@ class HomeContent extends StatelessWidget {
                       color: transaction.type == "income" ? Colors.green : Colors.red,
                     ),
                   ),
-                  title: Text(transaction.category),
+                  title: Text(categoryName),
                   subtitle: Text("${transaction.date.toString()} - ${transaction.type}"),
                   trailing: Text(
                     "S/ ${transaction.amount.toStringAsFixed(2)}",
