@@ -7,6 +7,12 @@ class ReportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reportViewModel = Provider.of<ReportViewModel>(context);
+
+    // Cargar transacciones y reportes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      reportViewModel.fetchReports();
+    });
+
     final totalBalance = reportViewModel.getTotalBalance();
     final totalExpense = reportViewModel.getTotalExpense();
     final progress = totalExpense / 20000.0;
@@ -17,10 +23,6 @@ class ReportScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Color(0xFF00B686),
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
         title: Text("Analysis", style: TextStyle(color: Colors.white)),
         actions: [
           IconButton(
@@ -45,8 +47,8 @@ class ReportScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildBalanceInfo("Total Balance", "\$${totalBalance.toStringAsFixed(2)}", Colors.green),
-                  _buildBalanceInfo("Total Expense", "-\$${totalExpense.toStringAsFixed(2)}", Colors.red),
+                  _buildBalanceInfo("Total Balance", "S/ ${totalBalance.toStringAsFixed(2)}", Colors.green),
+                  _buildBalanceInfo("Total Expense", "-S/ ${totalExpense.toStringAsFixed(2)}", Colors.red),
                 ],
               ),
               SizedBox(height: 16),
@@ -55,7 +57,7 @@ class ReportScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   LinearProgressIndicator(
-                    value: progress,
+                    value: progress.isFinite ? progress : 0.0,
                     backgroundColor: Colors.grey.shade300,
                     color: Colors.green,
                   ),
@@ -124,8 +126,8 @@ class ReportScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildSummaryCard("Income", "\$${reportViewModel.getTotalIncome().toStringAsFixed(2)}", Icons.arrow_downward, Colors.green),
-                  _buildSummaryCard("Expense", "\$${reportViewModel.getTotalExpense().toStringAsFixed(2)}", Icons.arrow_upward, Colors.red),
+                  _buildSummaryCard("Income", "S/ ${reportViewModel.getTotalIncome().toStringAsFixed(2)}", Icons.arrow_downward, Colors.green),
+                  _buildSummaryCard("Expense", "S/ ${reportViewModel.getTotalExpense().toStringAsFixed(2)}", Icons.arrow_upward, Colors.red),
                 ],
               ),
             ],
