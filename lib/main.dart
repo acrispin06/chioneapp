@@ -1,3 +1,5 @@
+import 'package:chioneapp/db/database_helper.dart';
+import 'package:chioneapp/views/report_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'viewmodels/budget_view_model.dart';
@@ -14,7 +16,12 @@ import 'views/home_screen.dart';
 import 'views/transaction_screen.dart';
 //import 'views/profile_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final dbHelper = DatabaseHelper();
+ // await dbHelper.insertSampleData();
+
   runApp(ChiOneApp());
 }
 
@@ -53,7 +60,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   final List<Widget> _screens = [
     HomeScreen(),
-    //ReportScreen(),
+    ReportScreen(),
     TransactionScreen(),
     BudgetScreen(),
     //ProfileScreen(),
@@ -77,7 +84,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Reports'),
           BottomNavigationBarItem(icon: Icon(Icons.swap_horiz), label: 'Transactions'),
           BottomNavigationBarItem(icon: Icon(Icons.category), label: 'Budgets'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          //BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
         selectedItemColor: Colors.green,
         unselectedItemColor: Colors.grey,
