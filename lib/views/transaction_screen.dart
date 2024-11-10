@@ -8,6 +8,7 @@ class TransactionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final transactionViewModel = Provider.of<TransactionViewModel>(context);
 
+    // Cargar transacciones solo una vez cuando se construye el widget
     WidgetsBinding.instance.addPostFrameCallback((_) {
       transactionViewModel.fetchTransactions();
     });
@@ -50,7 +51,7 @@ class TransactionScreen extends StatelessWidget {
                     Text("Total Balance", style: TextStyle(fontSize: 16)),
                     SizedBox(height: 8),
                     Text(
-                      "S/ 7,783.00",
+                      "S/ ${transactionViewModel.totalBalance.toStringAsFixed(2)}",
                       style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green),
                     ),
                     SizedBox(height: 16),
@@ -62,7 +63,7 @@ class TransactionScreen extends StatelessWidget {
                           children: [
                             Text("Total Balance", style: TextStyle(fontSize: 14)),
                             Text(
-                              "S/ 7,783.00",
+                              "S/ ${transactionViewModel.totalBalance.toStringAsFixed(2)}",
                               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
                             ),
                           ],
@@ -72,7 +73,7 @@ class TransactionScreen extends StatelessWidget {
                           children: [
                             Text("Total Expense", style: TextStyle(fontSize: 14)),
                             Text(
-                              "- S/ 1,187.40",
+                              "- S/ ${transactionViewModel.totalExpense.toStringAsFixed(2)}",
                               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red),
                             ),
                           ],
@@ -84,17 +85,22 @@ class TransactionScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           child: LinearProgressIndicator(
-                            value: 0.3,
+                            value: transactionViewModel.totalExpense / transactionViewModel.goal,
                             backgroundColor: Colors.grey.shade300,
                             color: Colors.green,
                           ),
                         ),
                         SizedBox(width: 8),
-                        Text("S/ 20,000.00", style: TextStyle(fontSize: 14, color: Colors.grey)),
+                        Text(
+                          "S/ ${transactionViewModel.goal.toStringAsFixed(2)}",
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
                       ],
                     ),
                     SizedBox(height: 8),
-                    Text("30% Of Your Expenses, Looks Good."),
+                    Text(
+                      "${((transactionViewModel.totalExpense / transactionViewModel.goal) * 100).toStringAsFixed(1)}% Of Your Expenses, Looks Good.",
+                    ),
                   ],
                 ),
               ),
@@ -112,7 +118,7 @@ class TransactionScreen extends StatelessWidget {
                     itemCount: model.transactions.length,
                     itemBuilder: (context, index) {
                       final transaction = model.transactions[index];
-                      return _buildTransactionTile(context, transaction);
+                      return _buildTransactionTile(context, transaction, model);
                     },
                   );
                 },
@@ -124,10 +130,8 @@ class TransactionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTransactionTile(BuildContext context, Transaction transaction) {
-    final transactionViewModel = Provider.of<TransactionViewModel>(context, listen: false);
-
-    // Obtén el nombre de la categoría directamente
+  Widget _buildTransactionTile(BuildContext context, Transaction transaction, TransactionViewModel transactionViewModel) {
+    // Obtén el nombre de la categoría directamente del mapa en transactionViewModel
     final categoryName = transactionViewModel.getCategoryName(transaction.category);
 
     return Column(

@@ -9,8 +9,18 @@ class TransactionViewModel extends ChangeNotifier {
 
   List<Transaction> get transactions => _transactions;
 
+  double _totalBalance = 0.0;
+  double _totalExpense = 0.0;
+  double _goal = 20000.0; // Se puede ajustar para tomar el valor desde la BD si se almacena el goal
+
+  double get totalBalance => _totalBalance;
+  double get totalExpense => _totalExpense;
+  double get goal => _goal;
+
   Future<void> fetchTransactions() async {
     _transactions = await _dbHelper.getTransactions();
+    _totalBalance = _calculateTotalBalance();
+    _totalExpense = _calculateTotalExpense();
 
     for (var transaction in _transactions) {
       if (!_categoryNames.containsKey(transaction.category)) {
@@ -20,6 +30,17 @@ class TransactionViewModel extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  double _calculateTotalBalance() {
+    return _transactions.fold(0.0, (sum, transaction) =>
+    transaction.type == 'income' ? sum + transaction.amount : sum - transaction.amount);
+  }
+
+  double _calculateTotalExpense() {
+    return _transactions
+        .where((transaction) => transaction.type == 'expense')
+        .fold(0.0, (sum, transaction) => sum + transaction.amount);
   }
 
   Future<void> addTransaction(Transaction transaction) async {
