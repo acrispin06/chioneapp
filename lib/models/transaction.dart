@@ -2,7 +2,7 @@ class Transaction {
   final int id;
   final String type; // "income" or "expense"
   double amount;
-  final String category;
+  final int category; //llama al categoryID
   final DateTime date;
   final String description;
   final String icon;
