@@ -11,16 +11,19 @@ class TransactionViewModel extends ChangeNotifier {
 
   double _totalBalance = 0.0;
   double _totalExpense = 0.0;
-  double _goal = 20000.0; // Se puede ajustar para tomar el valor desde la BD si se almacena el goal
+  double _totalIncome = 0.0;
+  double _goal = 20000.0;
 
   double get totalBalance => _totalBalance;
   double get totalExpense => _totalExpense;
+  double get totalIncome => _totalIncome;
   double get goal => _goal;
 
   Future<void> fetchTransactions() async {
     _transactions = await _dbHelper.getTransactions();
     _totalBalance = _calculateTotalBalance();
     _totalExpense = _calculateTotalExpense();
+    _totalIncome = _calculateTotalIncome();
 
     for (var transaction in _transactions) {
       if (!_categoryNames.containsKey(transaction.category)) {
@@ -60,6 +63,12 @@ class TransactionViewModel extends ChangeNotifier {
         .fold(0.0, (sum, transaction) => sum + transaction.amount);
   }
 
+  double _calculateTotalIncome() {
+    return _transactions
+        .where((transaction) => transaction.type == 'income')
+        .fold(0.0, (sum, transaction) => sum + transaction.amount);
+  }
+
   double getWeeklyIncome() {
     DateTime now = DateTime.now();
     DateTime weekAgo = now.subtract(Duration(days: 7));
@@ -92,6 +101,30 @@ class TransactionViewModel extends ChangeNotifier {
 
   String getCategoryName(int categoryId) {
     return _categoryNames[categoryId] ?? 'Unknown';
+  }
+
+  List<Transaction> getFilteredTransactions(String period) {
+    DateTime now = DateTime.now();
+    DateTime startDate;
+
+    switch (period) {
+      case 'Daily':
+        startDate = DateTime(now.year, now.month, now.day);
+        break;
+      case 'Weekly':
+        startDate = now.subtract(Duration(days: now.weekday - 1));
+        break;
+      case 'Monthly':
+        startDate = DateTime(now.year, now.month);
+        break;
+      default:
+        startDate = DateTime(now.year);
+        break;
+    }
+
+    return _transactions.where((transaction) {
+      return transaction.date.isAfter(startDate) && transaction.date.isBefore(now);
+    }).toList();
   }
 
   String _getMonthName(int month) {
