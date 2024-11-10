@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/transaction_view_model.dart';
 import '../viewmodels/budget_view_model.dart';
-import '../models/transaction.dart';
-import '../models/budget.dart';
 
 class BudgetScreen extends StatelessWidget {
   @override
@@ -127,9 +125,12 @@ class BudgetScreen extends StatelessWidget {
                 itemCount: budgetViewModel.budgets.length,
                 itemBuilder: (context, index) {
                   final budget = budgetViewModel.budgets[index];
+                  // Obtén el nombre de la categoría directamente
+                  final categoryName = transactionViewModel.getCategoryName(budget.categoryId);
+
                   return ListTile(
                     leading: Icon(Icons.category, color: Colors.blue),
-                    title: Text(budget.category),
+                    title: Text(categoryName), // Muestra el nombre de la categoría aquí
                     subtitle: Text("Limit: S/ ${budget.amount}"),
                     trailing: Text(
                       "Spent: S/ ${budget.spent}",
@@ -168,32 +169,6 @@ class BudgetScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildTransactionTile(BuildContext context, Transaction transaction) {
-    return Column(
-      children: [
-        ListTile(
-          leading: CircleAvatar(
-            backgroundColor: Colors.blue.shade100,
-            child: Icon(
-              transaction.type == "income" ? Icons.arrow_downward : Icons.arrow_upward,
-              color: transaction.type == "income" ? Colors.green : Colors.red,
-            ),
-          ),
-          title: Text(transaction.category),
-          subtitle: Text("${transaction.date.toString()} - ${transaction.type}"),
-          trailing: Text(
-            "S/ ${transaction.amount.toStringAsFixed(2)}",
-            style: TextStyle(
-              color: transaction.type == "income" ? Colors.green : Colors.red,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        Divider(),
-      ],
     );
   }
 }
