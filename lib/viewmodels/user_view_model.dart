@@ -17,4 +17,8 @@ class UserViewModel extends ChangeNotifier {
     await _dbHelper.insertUser(user);
     await fetchUsers();
   }
+
+  double getTotalBalance() {
+    return _users.isNotEmpty ? _users.first.budgetGoal : 0.0;
+  }
 }
