@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/user.dart';
 import '../models/transaction.dart' as transaction_model;
@@ -155,7 +156,6 @@ class DatabaseHelper {
     });
   }
 
-  // Método para obtener el gasto total por categoría desde la vista
   Future<double> getSpentByCategory(int categoryId) async {
     final db = await database;
     final result = await db.query(
@@ -240,5 +240,107 @@ class DatabaseHelper {
     final db = await database;
     final maps = await db.query('notifications');
     return List.generate(maps.length, (i) => AppNotification.fromMap(maps[i]));
+  }
+
+  Future<void> insertSampleData() async {
+    final db = await database;
+
+    // Insert example users
+    await db.insert('users', {
+      'id': 1,
+      'name': 'Sample User',
+      'currency': '\$',
+      'budgetGoal': 10000.0,
+    });
+
+// Insert example categories
+    await db.insert('categories', {
+      'id': 1,
+      'name': 'Food',
+      'type': 'expense',
+      'icon': 'food_icon',
+    });
+    await db.insert('categories', {
+      'id': 2,
+      'name': 'Transport',
+      'type': 'expense',
+      'icon': 'transport_icon',
+    });
+    await db.insert('categories', {
+      'id': 3,
+      'name': 'Salary',
+      'type': 'income',
+      'icon': 'salary_icon',
+    });
+
+// Insert example transactions
+    await db.insert('transactions', {
+      'id': 1,
+      'type': 'expense',
+      'amount': 150.0,
+      'category': 1,
+      'date': '2024-11-01',
+      'description': 'Grocery store purchase',
+      'icon': 'shopping_cart',
+    });
+    await db.insert('transactions', {
+      'id': 2,
+      'type': 'expense',
+      'amount': 50.0,
+      'category': 2,
+      'date': '2024-11-02',
+      'description': 'Taxi',
+      'icon': 'taxi_icon',
+    });
+    await db.insert('transactions', {
+      'id': 3,
+      'type': 'income',
+      'amount': 5000.0,
+      'category': 3,
+      'date': '2024-11-03',
+      'description': 'Monthly salary',
+      'icon': 'salary_icon',
+    });
+    await db.insert('transactions', {
+      'id': 4,
+      'type': 'expense',
+      'amount': 50.0,
+      'category': 1,
+      'date': '2024-11-02',
+      'description': 'Popeyes',
+      'icon': 'food_icon',
+    });
+
+// Insert example budgets
+    await db.insert('budgets', {
+      'id': 1,
+      'categoryId': 1,
+      'amount': 200.0,
+      'date': '2024-11-01',
+    });
+    await db.insert('budgets', {
+      'id': 2,
+      'categoryId': 2,
+      'amount': 100.0,
+      'date': '2024-11-01',
+    });
+
+// Insert example goals
+    await db.insert('goals', {
+      'id': 1,
+      'name': 'End of year trip',
+      'amount': 3000.0,
+      'currentAmount': 500.0,
+      'targetDate': '2024-12-31',
+    });
+
+// Insert example notifications
+    await db.insert('notifications', {
+      'id': 1,
+      'title': 'Budget Reminder',
+      'message': 'You have reached 75% of your budget for Food.',
+      'date': '2024-11-04',
+      'type': 'alert',
+    });
   }
 }
