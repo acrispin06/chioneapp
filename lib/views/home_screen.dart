@@ -66,9 +66,8 @@ class HomeContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final transactionViewModel = Provider.of<TransactionViewModel>(context);
-    final userViewModel = Provider.of<UserViewModel>(context);
 
-    double totalBalance = userViewModel.getTotalBalance();
+    double totalBalance = transactionViewModel.totalBalance;
     double totalExpense = transactionViewModel.getTotalExpense();
     double weeklyIncome = transactionViewModel.getWeeklyIncome();
     double weeklyFoodExpense = transactionViewModel.getWeeklyFoodExpense();
