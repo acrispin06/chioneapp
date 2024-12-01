@@ -1,41 +1,28 @@
-import 'package:flutter/material.dart';
-import '../db/database_helper.dart';
-import '../models/AppNotification.dart';
+import 'package:flutter/foundation.dart';
+import '../services/notification_service.dart';
 
-class NotificationViewModel extends ChangeNotifier {
-  final DatabaseHelper _dbHelper = DatabaseHelper();
-  List<AppNotification> _notifications = [];
+class NotificationViewModel with ChangeNotifier {
+  final NotificationService _notificationService = NotificationService();
 
-  List<AppNotification> get notifications => _notifications;
+  bool _isLoading = false;
+  String _errorMessage = '';
+  List<Map<String, dynamic>> _notifications = [];
+
+  bool get isLoading => _isLoading;
+  String get errorMessage => _errorMessage;
+  List<Map<String, dynamic>> get notifications => _notifications;
 
   Future<void> fetchNotifications() async {
-    _notifications = await _dbHelper.getNotifications();
+    _isLoading = true;
     notifyListeners();
-  }
 
-  Future<void> addNotification(AppNotification notification) async {
-    await _dbHelper.insertNotification(notification);
-    await fetchNotifications();
-  }
-
-  List<AppNotification> getNotificationsByDate(String dateLabel) {
-    DateTime now = DateTime.now();
-
-    return _notifications.where((notification) {
-      if (dateLabel == "Today") {
-        return notification.date.day == now.day &&
-            notification.date.month == now.month &&
-            notification.date.year == now.year;
-      } else if (dateLabel == "Yesterday") {
-        return notification.date.day == now.subtract(Duration(days: 1)).day &&
-            notification.date.month == now.month &&
-            notification.date.year == now.year;
-      } else if (dateLabel == "This Weekend") {
-        DateTime weekendStart = now.subtract(Duration(days: now.weekday));
-        DateTime weekendEnd = weekendStart.add(Duration(days: 2));
-        return notification.date.isAfter(weekendStart) && notification.date.isBefore(weekendEnd);
-      }
-      return false;
-    }).toList();
+    try {
+      _notifications = await _notificationService.getAllNotifications();
+    } catch (e) {
+      _errorMessage = 'Error fetching notifications';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }

@@ -1,14 +1,18 @@
 class Category {
-  final int id;
-  final String name;
-  final String type; // "income" or "expense"
-  final String icon;
+  int? id;
+  String name;
+  int type;
+  int? iconId;
+  DateTime createdAt;
+  DateTime updatedAt;
 
   Category({
-    required this.id,
+    this.id,
     required this.name,
     required this.type,
-    required this.icon,
+    this.iconId,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   Map<String, dynamic> toMap() {
@@ -16,7 +20,9 @@ class Category {
       'id': id,
       'name': name,
       'type': type,
-      'icon': icon,
+      'icon_id': iconId,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 
@@ -25,7 +31,9 @@ class Category {
       id: map['id'],
       name: map['name'],
       type: map['type'],
-      icon: map['icon'],
+      iconId: map['icon_id'],
+      createdAt: DateTime.parse(map['created_at']),
+      updatedAt: DateTime.parse(map['updated_at']),
     );
   }
 }

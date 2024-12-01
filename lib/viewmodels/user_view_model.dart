@@ -1,24 +1,37 @@
-import 'package:flutter/material.dart';
-import '../db/database_helper.dart';
-import '../models/user.dart';
+import 'package:flutter/foundation.dart';
+import '../services/user_service.dart';
 
-class UserViewModel extends ChangeNotifier {
-  final DatabaseHelper _dbHelper = DatabaseHelper();
-  List<User> _users = [];
+class UserViewModel with ChangeNotifier {
+  final UserService _userService = UserService();
 
-  List<User> get users => _users;
+  bool _isLoading = false;
+  String _errorMessage = '';
+  List<Map<String, dynamic>> _users = [];
+
+  bool get isLoading => _isLoading;
+  String get errorMessage => _errorMessage;
+  List<Map<String, dynamic>> get users => _users;
 
   Future<void> fetchUsers() async {
-    _users = await _dbHelper.getUsers();
+    _isLoading = true;
     notifyListeners();
+
+    try {
+      _users = await _userService.getAllUsers();
+    } catch (e) {
+      _errorMessage = 'Error fetching users';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  Future<void> addUser(User user) async {
-    await _dbHelper.insertUser(user);
-    await fetchUsers();
-  }
-
-  double getTotalBalance() {
-    return _users.isNotEmpty ? _users.first.budgetGoal : 0.0;
+  Future<void> addUser(Map<String, dynamic> user) async {
+    try {
+      await _userService.createUser(user);
+      await fetchUsers();
+    } catch (e) {
+      _errorMessage = 'Error adding user';
+    }
   }
 }

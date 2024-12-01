@@ -1,20 +1,28 @@
-import 'package:flutter/material.dart';
-import '../db/database_helper.dart';
-import '../models/goal.dart';
+import 'package:flutter/foundation.dart';
+import '../services/goal_service.dart';
 
-class GoalViewModel extends ChangeNotifier {
-  final DatabaseHelper _dbHelper = DatabaseHelper();
-  List<Goal> _goals = [];
+class GoalViewModel with ChangeNotifier {
+  final GoalService _goalService = GoalService();
 
-  List<Goal> get goals => _goals;
+  bool _isLoading = false;
+  String _errorMessage = '';
+  List<Map<String, dynamic>> _goals = [];
 
-  Future<void> fetchGoals() async {
-    _goals = await _dbHelper.getGoals();
+  bool get isLoading => _isLoading;
+  String get errorMessage => _errorMessage;
+  List<Map<String, dynamic>> get goals => _goals;
+
+  Future<void> fetchGoals(int userId) async {
+    _isLoading = true;
     notifyListeners();
-  }
 
-  Future<void> addGoal(Goal goal) async {
-    await _dbHelper.insertGoal(goal);
-    await fetchGoals();
+    try {
+      _goals = await _goalService.getGoalsByUser(userId);
+    } catch (e) {
+      _errorMessage = 'Error fetching goals';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }

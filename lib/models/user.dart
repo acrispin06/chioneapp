@@ -1,22 +1,28 @@
 class User {
-  final int id;
-  final String name;
-  final String currency;
-  final double budgetGoal;
+  int? id;
+  String name;
+  int? currencyId;
+  double budgetGoal;
+  DateTime createdAt;
+  DateTime updatedAt;
 
   User({
-    required this.id,
+    this.id,
     required this.name,
-    required this.currency,
+    this.currencyId,
     required this.budgetGoal,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'name': name,
-      'currency': currency,
+      'currency_id': currencyId,
       'budgetGoal': budgetGoal,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 
@@ -24,8 +30,10 @@ class User {
     return User(
       id: map['id'],
       name: map['name'],
-      currency: map['currency'],
+      currencyId: map['currency_id'],
       budgetGoal: map['budgetGoal'],
+      createdAt: DateTime.parse(map['created_at']),
+      updatedAt: DateTime.parse(map['updated_at']),
     );
   }
 }

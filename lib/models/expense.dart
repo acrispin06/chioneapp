@@ -1,18 +1,22 @@
-class Budget {
+class Expense {
   int? id;
-  int userId;
-  int categoryId;
   double amount;
+  int categoryId;
   DateTime date;
+  DateTime time;
+  String description;
+  int? iconId;
   DateTime createdAt;
   DateTime updatedAt;
 
-  Budget({
+  Expense({
     this.id,
-    required this.userId,
-    required this.categoryId,
     required this.amount,
+    required this.categoryId,
     required this.date,
+    required this.time,
+    required this.description,
+    this.iconId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -20,22 +24,26 @@ class Budget {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'user_id': userId,
-      'category_id': categoryId,
       'amount': amount,
+      'category_id': categoryId,
       'date': date.toIso8601String(),
+      'time': time.toIso8601String(),
+      'description': description,
+      'icon_id': iconId,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
   }
 
-  factory Budget.fromMap(Map<String, dynamic> map) {
-    return Budget(
+  factory Expense.fromMap(Map<String, dynamic> map) {
+    return Expense(
       id: map['id'],
-      userId: map['user_id'],
+      amount: map['amount'],
       categoryId: map['category_id'],
-      amount: (map['amount'] as num).toDouble(),
       date: DateTime.parse(map['date']),
+      time: DateTime.parse(map['time']),
+      description: map['description'],
+      iconId: map['icon_id'],
       createdAt: DateTime.parse(map['created_at']),
       updatedAt: DateTime.parse(map['updated_at']),
     );

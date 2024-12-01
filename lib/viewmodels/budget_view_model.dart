@@ -1,25 +1,31 @@
-import 'package:flutter/material.dart';
-import '../db/database_helper.dart';
-import '../models/budget.dart';
+import 'package:flutter/foundation.dart';
+import '../services/budget_service.dart';
 
-class BudgetViewModel extends ChangeNotifier {
-  final DatabaseHelper _dbHelper = DatabaseHelper();
-  List<Budget> _budgets = [];
+class BudgetViewModel with ChangeNotifier {
+  final BudgetService _budgetService = BudgetService();
 
-  List<Budget> get budgets => _budgets;
+  bool _isLoading = false;
+  String _errorMessage = '';
+  List<Map<String, dynamic>> _budgets = [];
+  double _totalBudget = 0.0;
 
-  Future<void> fetchBudgets() async {
-    _budgets = await _dbHelper.getBudgets();
-    for (var budget in _budgets) {
-      budget.category = await _dbHelper.getCategoryName(budget.categoryId);
-      budget.spent = await _dbHelper.getSpentByCategory(budget.categoryId);
-    }
+  bool get isLoading => _isLoading;
+  String get errorMessage => _errorMessage;
+  List<Map<String, dynamic>> get budgets => _budgets;
+  double get totalBudget => _totalBudget;
+
+  Future<void> fetchBudgets(int userId) async {
+    _isLoading = true;
     notifyListeners();
-  }
 
-  Future<void> addBudget(Budget budget) async {
-    await _dbHelper.insertBudget(budget);
-    await fetchBudgets();
+    try {
+      _budgets = (await _budgetService.getBudgetsByUser(userId)).cast<Map<String, dynamic>>();
+      _totalBudget = await _budgetService.calculateTotalBudget(userId);
+    } catch (e) {
+      _errorMessage = 'Error fetching budgets';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
-
 }
