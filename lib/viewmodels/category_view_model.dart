@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:chioneapp/services/categories_service.dart';
-import '../models/category.dart';
+import 'package:chioneapp/models/category.dart';
 
 class CategoryViewModel extends ChangeNotifier {
   final CategoryService _categoryService = CategoryService();
