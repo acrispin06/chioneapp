@@ -3,6 +3,29 @@ import '../db/database_helper.dart';
 class ReportService {
   final DatabaseHelper _dbHelper = DatabaseHelper();
 
+  //getAllReports
+  Future<List<Map<String, dynamic>>> getAllReports() async {
+    final db = await _dbHelper.database;
+    final result = await db.rawQuery('''
+    SELECT 
+      strftime('%m', date) AS month,
+      strftime('%Y', date) AS year,
+      (SELECT SUM(amount) 
+         FROM incomes 
+         WHERE strftime('%m', date) = strftime('%m', incomes.date) 
+           AND strftime('%Y', date) = strftime('%Y', incomes.date)) AS totalIncome,
+      (SELECT SUM(amount) 
+         FROM expenses 
+         WHERE strftime('%m', date) = strftime('%m', expenses.date) 
+           AND strftime('%Y', date) = strftime('%Y', expenses.date)) AS totalExpense
+    FROM transactions
+    GROUP BY year, month
+    ORDER BY year DESC, month DESC;
+    ''');
+
+    return List<Map<String, dynamic>>.from(result);
+  }
+
   Future<Map<String, dynamic>> getMonthlyReport(int month, int year) async {
     final db = await _dbHelper.database;
     final result = await db.rawQuery('''
