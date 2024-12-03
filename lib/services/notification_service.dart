@@ -13,8 +13,20 @@ class NotificationService {
     return await db.insert('notifications', notification);
   }
 
-  Future<void> markAsRead(int notificationId) async {
+  Future<void> markNotificationAsRead(int notificationId) async {
     final db = await _dbHelper.database;
     await db.update('notifications', {'status': 'read'}, where: 'id = ?', whereArgs: [notificationId]);
+  }
+
+  //deleteNotification
+  Future<void> deleteNotification(int notificationId) async {
+    final db = await _dbHelper.database;
+    await db.delete('notifications', where: 'id = ?', whereArgs: [notificationId]);
+  }
+
+  //clearAllNotifications
+  Future<void> clearAllNotifications() async {
+    final db = await _dbHelper.database;
+    await db.delete('notifications');
   }
 }
