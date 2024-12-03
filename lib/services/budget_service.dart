@@ -8,21 +8,19 @@ class BudgetService {
     final db = await _dbHelper.database;
     final maps = await db.query('budgets', where: 'user_id = ?', whereArgs: [userId]);
 
-    // Mapea los resultados a una lista de objetos Budget
+    // Convierte los resultados en una lista de objetos Budget
     return maps.map((map) => Budget.fromMap(map)).toList();
   }
 
+  //calculate Total budget
   Future<double> calculateTotalBudget(int userId) async {
-    // Obtén la lista de presupuestos del usuario
-    final budgets = await getBudgetsByUser(userId);
+    final db = await _dbHelper.database;
+    final result = await db.rawQuery('''
+      SELECT SUM(amount) as totalBudget
+      FROM budgets
+      WHERE user_id = ?
+    ''', [userId]);
 
-    // Realiza la suma a  segurando que todos los valores sean
-    // tratados como double
-    double total = 0.0;
-    for (var budget in budgets) {
-      total += budget.amount;
-    }
-
-    return total;
+    return (result.first['totalBudget'] as num?)?.toDouble() ?? 0.0;
   }
 }
