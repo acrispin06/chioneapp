@@ -1,155 +1,87 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/transaction_view_model.dart';
-import '../models/transaction.dart';
 
 class TransactionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final transactionViewModel = Provider.of<TransactionViewModel>(context);
-
-    // Cargar transacciones solo una vez cuando se construye el widget
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      transactionViewModel.fetchTransactions();
-    });
+    final transactionViewModel = Provider.of<TransactionViewModel>(context, listen: false);
 
     return Scaffold(
       appBar: AppBar(
+        title: const Text("Transactions"),
         backgroundColor: Colors.green,
-        elevation: 0,
-        title: Text("Transaction", style: TextStyle(color: Colors.white)),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.notifications, color: Colors.white),
-            onPressed: () {
-              // Acción al presionar el botón de notificación
-            },
-          ),
-        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Total Balance Section
-            Card(
-              color: Colors.white,
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("Total Balance", style: TextStyle(fontSize: 16)),
-                    SizedBox(height: 8),
-                    Text(
-                      "S/ ${transactionViewModel.totalBalance.toStringAsFixed(2)}",
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green),
+      body: Consumer<TransactionViewModel>(
+        builder: (context, transactionViewModel, child) {
+          if (transactionViewModel.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (transactionViewModel.errorMessage.isNotEmpty) {
+            return Center(
+              child: Text(
+                transactionViewModel.errorMessage,
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
+          }
+
+          if (transactionViewModel.transactions.isEmpty) {
+            return const Center(
+              child: Text(
+                "No transactions available.",
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+            );
+          }
+
+          final transactions = transactionViewModel.transactions;
+
+          return ListView.builder(
+            itemCount: transactions.length,
+            itemBuilder: (context, index) {
+              final transaction = transactions[index];
+              final type = transaction['type'] ?? 'unknown';
+              final description = transaction['description'] ?? 'No description';
+              final date = transaction['date'] != null
+                  ? DateTime.parse(transaction['date'])
+                  : DateTime.now();
+              final amount = transaction['amount'] ?? 0.0;
+
+              return Card(
+                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: type == "income"
+                        ? Colors.green.shade100
+                        : Colors.red.shade100,
+                    child: Icon(
+                      type == "income" ? Icons.arrow_downward : Icons.arrow_upward,
+                      color: type == "income" ? Colors.green : Colors.red,
                     ),
-                    SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Total Balance", style: TextStyle(fontSize: 14)),
-                            Text(
-                              "S/ ${transactionViewModel.totalBalance.toStringAsFixed(2)}",
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Total Expense", style: TextStyle(fontSize: 14)),
-                            Text(
-                              "- S/ ${transactionViewModel.totalExpense.toStringAsFixed(2)}",
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red),
-                            ),
-                          ],
-                        ),
-                      ],
+                  ),
+                  title: Text(
+                    description,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    "${date.toLocal()}".split(' ')[0], // Display date in YYYY-MM-DD format
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  trailing: Text(
+                    "S/ ${amount.toStringAsFixed(2)}",
+                    style: TextStyle(
+                      color: type == "income" ? Colors.green : Colors.red,
+                      fontWeight: FontWeight.bold,
                     ),
-                    SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: LinearProgressIndicator(
-                            value: transactionViewModel.totalExpense / transactionViewModel.goal,
-                            backgroundColor: Colors.grey.shade300,
-                            color: Colors.green,
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          "S/ ${transactionViewModel.goal.toStringAsFixed(2)}",
-                          style: TextStyle(fontSize: 14, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      "${((transactionViewModel.totalExpense / transactionViewModel.goal) * 100).toStringAsFixed(1)}% Of Your Expenses, Looks Good.",
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-            SizedBox(height: 16),
-            // Transaction List
-            Expanded(
-              child: Consumer<TransactionViewModel>(
-                builder: (context, model, child) {
-                  if (model.transactions.isEmpty) {
-                    return Center(child: Text("No transactions available."));
-                  }
-
-                  return ListView.builder(
-                    itemCount: model.transactions.length,
-                    itemBuilder: (context, index) {
-                      final transaction = model.transactions[index];
-                      return _buildTransactionTile(context, transaction, model);
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+              );
+            },
+          );
+        },
       ),
-    );
-  }
-
-  Widget _buildTransactionTile(BuildContext context, Transaction transaction, TransactionViewModel transactionViewModel) {
-    // Obtén el nombre de la categoría directamente del mapa en transactionViewModel
-    final categoryName = transactionViewModel.getCategoryName(transaction.category);
-
-    return Column(
-      children: [
-        ListTile(
-          leading: CircleAvatar(
-            backgroundColor: Colors.blue.shade100,
-            child: Icon(
-              transaction.type == "income" ? Icons.arrow_downward : Icons.arrow_upward,
-              color: transaction.type == "income" ? Colors.green : Colors.red,
-            ),
-          ),
-          title: Text(categoryName), // Muestra el nombre de la categoría aquí
-          subtitle: Text("${transaction.date.toString()} - ${transaction.type}"),
-          trailing: Text(
-            "S/ ${transaction.amount.toStringAsFixed(2)}",
-            style: TextStyle(
-              color: transaction.type == "income" ? Colors.green : Colors.red,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        Divider(),
-      ],
     );
   }
 }
