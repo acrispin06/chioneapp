@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../viewmodels/goal_view_model.dart';
 
 class GoalScreen extends StatefulWidget {
+  const GoalScreen({super.key});
+
   @override
   _GoalScreenState createState() => _GoalScreenState();
 }
@@ -28,10 +30,6 @@ class _GoalScreenState extends State<GoalScreen> {
       body: Consumer<GoalViewModel>(
         builder: (context, goalViewModel, child) {
           final goals = goalViewModel.goals;
-
-          if (goals == null) {
-            return const Center(child: CircularProgressIndicator());
-          }
 
           if (goals.isEmpty) {
             return const Center(child: Text("No goals available"));
