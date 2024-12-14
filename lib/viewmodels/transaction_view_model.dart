@@ -18,6 +18,18 @@ class TransactionViewModel with ChangeNotifier {
   double get goal => _goal;
   double get totalIncome => _totalIncome;
 
+  //fetchAllTransactions
+  Future<void> fetchAllTransactions() async {
+    _setLoadingState(true);
+    try {
+      _transactions = await _transactionService.getExpenseTransactionsAndIncomeTransactions();
+    } catch (e) {
+      _setErrorMessage('Error fetching transactions: $e');
+    } finally {
+      _setLoadingState(false);
+    }
+  }
+
   Future<void> fetchTransactions(String type) async {
     _setLoadingState(true);
     try {

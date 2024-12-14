@@ -2,13 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/transaction_view_model.dart';
 
-class TransactionScreen extends StatelessWidget {
+class TransactionScreen extends StatefulWidget {
   const TransactionScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final transactionViewModel = Provider.of<TransactionViewModel>(context, listen: false);
+  State<TransactionScreen> createState() => _TransactionScreenState();
+}
 
+class _TransactionScreenState extends State<TransactionScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final transactionViewModel = Provider.of<TransactionViewModel>(context, listen: false);
+      transactionViewModel.fetchAllTransactions();
+    });
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Transactions"),
@@ -44,7 +57,7 @@ class TransactionScreen extends StatelessWidget {
             itemCount: transactions.length,
             itemBuilder: (context, index) {
               final transaction = transactions[index];
-              final type = transaction['type'] ?? 'unknown';
+              final type = transaction['type_id'] == 1 ? "income" : "expense";
               final description = transaction['description'] ?? 'No description';
               final date = transaction['date'] != null
                   ? DateTime.parse(transaction['date'])
@@ -59,8 +72,8 @@ class TransactionScreen extends StatelessWidget {
                         ? Colors.green.shade100
                         : Colors.red.shade100,
                     child: Icon(
-                      type == "income" ? Icons.arrow_downward : Icons.arrow_upward,
-                      color: type == "income" ? Colors.green : Colors.red,
+                      transaction['type_id'] == 1 ? Icons.arrow_downward : Icons.arrow_upward,
+                      color: transaction['type_id'] == 1 ? Colors.green : Colors.red,
                     ),
                   ),
                   title: Text(

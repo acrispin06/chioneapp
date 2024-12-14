@@ -5,7 +5,17 @@ class TransactionService {
 
   Future<List<Map<String, dynamic>>> getAllTransactions(String type) async {
     final db = await _dbHelper.database;
-    return await db.query('transactions', where: 'type = ?', whereArgs: [type]);
+
+    // Mapear el tipo (income/expense) a su correspondiente type_id
+    final typeId = type == 'income' ? 1 : 2;
+
+    return await db.query('transactions', where: 'type_id = ?', whereArgs: [typeId]);
+  }
+
+  //getEnxpenseTransactionsAndIncomeTransactions
+  Future<List<Map<String, dynamic>>> getExpenseTransactionsAndIncomeTransactions() async {
+    final db = await _dbHelper.database;
+    return await db.query('transactions', where: 'type_id = 1 OR type_id = 2');
   }
 
   Future<Object> calculateTotal(String type) async {

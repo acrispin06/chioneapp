@@ -52,8 +52,8 @@ class Transaction {
       createdAt: DateTime.parse(map['created_at']),
       updatedAt: DateTime.parse(map['updated_at']),
       type: TransactionType.fromMap({
-        'type_id': map['type'],
-        'type_name': map['type'] == 1 ? 'income' : 'expense',
+        'type_id': map['type_id'],
+        'type_name': map['type_id'] == 1 ? 'income' : 'expense',
       }),
     );
   }
