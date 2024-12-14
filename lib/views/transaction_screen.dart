@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../viewmodels/transaction_view_model.dart';
 
 class TransactionScreen extends StatelessWidget {
+  const TransactionScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     final transactionViewModel = Provider.of<TransactionViewModel>(context, listen: false);
