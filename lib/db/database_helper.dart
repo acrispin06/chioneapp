@@ -248,6 +248,10 @@ class DatabaseHelper {
     FOREIGN KEY (user_id) REFERENCES users(id)
     );
     ''');
+  }
+  //Funcion para crear data de ejemplo
+  Future<void> createExampleData() async{
+    final db = await database;
     // Insert example transaction types and notification types
     //inserting default values
     //Currencies
@@ -274,6 +278,10 @@ class DatabaseHelper {
     await db.insert('categories', {'name': 'Health', 'type': 2, 'icon_id': 6});
     await db.insert('categories', {'name': 'Education', 'type': 2, 'icon_id': 7});
     await db.insert('categories', {'name': 'Others', 'type': 2, 'icon_id': 8});
+    //goals-categories
+    await db.insert('goal_categories', {'goal_id': 1, 'category_id': 1});
+    await db.insert('goal_categories', {'goal_id': 2, 'category_id': 2});
+
     //budgets
     await db.insert('budgets', {'user_id': 1, 'category_id': 1, 'amount': 100.0, 'date': '2024-11-29'});
     await db.insert('budgets', {'user_id': 1, 'category_id': 2, 'amount': 50.0, 'date': '2024-11-29'});
@@ -296,7 +304,11 @@ class DatabaseHelper {
     //goals
     await db.insert('goals', {'user_id': 1, 'name': 'Buy a new car', 'amount': 10000.0, 'targetDate': '2022-12-31'});
     await db.insert('goals', {'user_id': 1, 'name': 'Buy a new house', 'amount': 50000.0, 'targetDate': '2025-12-31'});
-    //notification types
+    //goals_transactions
+    await db.insert('goal_transactions', {'goal_id': 1, 'transaction_id': 1, 'progress_percentage': 10.0});
+    await db.insert('goal_transactions', {'goal_id': 1, 'transaction_id': 2, 'progress_percentage': 20.0});
+    await db.insert('goal_transactions', {'goal_id': 1, 'transaction_id': 3, 'progress_percentage': 30.0});
+    //notification_types
     await db.insert('notification_types', {'name': 'alert'});
     await db.insert('notification_types', {'name': 'info'});
     await db.insert('notification_types', {'name': 'warning'});
@@ -304,6 +316,14 @@ class DatabaseHelper {
     await db.insert('notification_types', {'name': 'reminder'});
     await db.insert('notification_types', {'name': 'update'});
     await db.insert('notification_types', {'name': 'transaction'});
+    //notifications
+    await db.insert('notifications', {'title': 'Alert 1', 'message': 'Alert message 1', 'date': '2024-11-29', 'type': 'alert', 'entity_id': 1, 'entity_type': 'transaction'});
+    await db.insert('notifications', {'title': 'Alert 2', 'message': 'Alert message 2', 'date': '2024-11-29', 'type': 'alert', 'entity_id': 2, 'entity_type': 'transaction'});
+    await db.insert('notifications', {'title': 'Alert 3', 'message': 'Alert message 3', 'date': '2024-11-29', 'type': 'alert', 'entity_id': 3, 'entity_type': 'transaction'});
+    //reports
+    await db.insert('reports', {'period_type': 'monthly', 'start_date': '2024-11-01', 'end_date': '2024-11-30', 'total_income': 1000.0, 'total_expense': 500.0, 'user_id': 1});
+    await db.insert('reports', {'period_type': 'monthly', 'start_date': '2024-12-01', 'end_date': '2024-12-31', 'total_income': 2000.0, 'total_expense': 1000.0, 'user_id': 1});
+
     //user category preferences
     await db.insert('user_category_preferences', {'user_id': 1, 'category_id': 1, 'preferred_budget': 100.0});
     await db.insert('user_category_preferences', {'user_id': 1, 'category_id': 2, 'preferred_budget': 50.0});
@@ -312,6 +332,7 @@ class DatabaseHelper {
     await db.insert('user_category_preferences', {'user_id': 1, 'category_id': 5, 'preferred_budget': 100.0});
     await db.insert('user_category_preferences', {'user_id': 1, 'category_id': 6, 'preferred_budget': 50.0});
     await db.insert('user_category_preferences', {'user_id': 1, 'category_id': 7, 'preferred_budget': 50.0});
+    //transactions
     await db.insert('transactions', {'amount': 100.0, 'category_id': 1, 'type_id': 1, 'date': '2024-11-29', 'time': '12:00:00', 'description': 'Salary Income', 'icon_id': 2});
     await db.insert('transactions', {'amount': 50.0, 'category_id': 2, 'type_id': 2, 'date': '2024-11-29', 'time': '14:00:00', 'description': 'Grocery Shopping', 'icon_id': 3});
   }
