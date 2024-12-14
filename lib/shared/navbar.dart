@@ -4,7 +4,7 @@ class BottomNavBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
 
-  const BottomNavBar({required this.currentIndex, required this.onTap});
+  const BottomNavBar({super.key, required this.currentIndex, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -17,20 +17,16 @@ class BottomNavBar extends StatelessWidget {
           label: 'Home',
         ),
         BottomNavigationBarItem(
-        icon: Icon(Icons.swap_horiz),
-          label: 'Transactions',
+        icon: Icon(Icons.account_balance_wallet_rounded),
+          label: 'Budgets',
         ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.pie_chart),
-            label: 'Analysis',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.category),
-            label: 'Categories',
+            label: 'Goals',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
+            icon: Icon(Icons.pie_chart),
+            label: 'Reports',
           ),
         ],
       selectedItemColor: Colors.green,
