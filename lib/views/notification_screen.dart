@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../viewmodels/notification_view_model.dart';
 
 class NotificationScreen extends StatelessWidget {
+  const NotificationScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     final notificationViewModel = Provider.of<NotificationViewModel>(context, listen: false);
