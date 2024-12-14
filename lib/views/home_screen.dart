@@ -7,6 +7,8 @@ import 'goal_screen.dart';
 import 'transaction_screen.dart';
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -19,7 +21,6 @@ class _HomeScreenState extends State<HomeScreen> {
     BudgetScreen(),
     GoalScreen(),
     ReportScreen(),
-    NotificationScreen()
   ];
 
   void _onItemTapped(int index) {
