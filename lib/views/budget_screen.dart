@@ -5,6 +5,8 @@ import '../viewmodels/budget_view_model.dart';
 import '../viewmodels/transaction_view_model.dart';
 
 class BudgetScreen extends StatefulWidget {
+  const BudgetScreen({super.key});
+
   @override
   _BudgetScreenState createState() => _BudgetScreenState();
 }
