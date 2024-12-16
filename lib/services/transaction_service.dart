@@ -3,89 +3,112 @@ import '../db/database_helper.dart';
 class TransactionService {
   final DatabaseHelper _dbHelper = DatabaseHelper();
 
-  Future<List<Map<String, dynamic>>> getAllTransactions(String type) async {
+  // Obtener todas las transacciones con JOIN a categorías, íconos y tipos
+  Future<List<Map<String, dynamic>>> getAllTransactions() async {
     final db = await _dbHelper.database;
-
-    // Mapear el tipo (income/expense) a su correspondiente type_id
-    final typeId = type == 'income' ? 1 : 2;
-
-    return await db.query('transactions', where: 'type_id = ?', whereArgs: [typeId]);
+    return await db.rawQuery('''
+      SELECT 
+        t.id,
+        t.amount,
+        t.date,
+        t.time,
+        t.description,
+        c.name AS category_name,
+        i.icon_path AS icon_path,
+        tt.type_name AS type_name,
+        t.type_id
+      FROM transactions t
+      JOIN categories c ON t.category_id = c.id
+      JOIN icons i ON t.icon_id = i.icon_id
+      JOIN transaction_types tt ON t.type_id = tt.type_id
+      ORDER BY t.date DESC
+    ''');
   }
 
-  //getEnxpenseTransactionsAndIncomeTransactions
-  Future<List<Map<String, dynamic>>> getExpenseTransactionsAndIncomeTransactions() async {
-    final db = await _dbHelper.database;
-    return await db.query('transactions', where: 'type_id = 1 OR type_id = 2');
-  }
-
-  Future<Object> calculateTotal(String type) async {
-    final db = await _dbHelper.database;
-    final result = await db.rawQuery('''
-      SELECT SUM(amount) as total 
-      FROM transactions 
-      WHERE type = ?
-    ''', [type]);
-
-    return result.isNotEmpty ? result.first['total'] ?? 0.0 : 0.0;
-  }
-
+  // Insertar transacción con sincronización
   Future<int> addTransaction(Map<String, dynamic> transaction) async {
-    return await _dbHelper.insertTransaction(transaction);
+    final db = await _dbHelper.database;
+
+    // Insertar en transactions
+    int transactionId = await db.insert('transactions', transaction);
+
+    // Insertar en incomes o expenses
+    if (transaction['type_id'] == 1) {
+      await db.insert('incomes', {
+        'id': transactionId,
+        'amount': transaction['amount'],
+        'category_id': transaction['category_id'],
+        'date': transaction['date'],
+        'time': transaction['time'],
+        'description': transaction['description'],
+        'icon_id': transaction['icon_id'],
+        'created_at': transaction['created_at'],
+        'updated_at': transaction['updated_at'],
+      });
+    } else if (transaction['type_id'] == 2) {
+      await db.insert('expenses', {
+        'id': transactionId,
+        'amount': transaction['amount'],
+        'category_id': transaction['category_id'],
+        'date': transaction['date'],
+        'time': transaction['time'],
+        'description': transaction['description'],
+        'icon_id': transaction['icon_id'],
+        'created_at': transaction['created_at'],
+        'updated_at': transaction['updated_at'],
+      });
+    }
+
+    return transactionId;
   }
 
-  //funciones nuevas
-  //Calculate Total Balance;
-  Future<Object> calculateTotalBalance() async {
+  // Actualizar transacción con sincronización
+  Future<int> updateTransaction(Map<String, dynamic> transaction) async {
+    final db = await _dbHelper.database;
+
+    // Actualizar en transactions
+    int rowsAffected = await db.update(
+      'transactions',
+      transaction,
+      where: 'id = ?',
+      whereArgs: [transaction['id']],
+    );
+
+    // Actualizar en incomes o expenses
+    if (transaction['type_id'] == 1) {
+      await db.update('incomes', transaction, where: 'id = ?', whereArgs: [transaction['id']]);
+    } else if (transaction['type_id'] == 2) {
+      await db.update('expenses', transaction, where: 'id = ?', whereArgs: [transaction['id']]);
+    }
+
+    return rowsAffected;
+  }
+
+  // Eliminar transacción con sincronización
+  Future<void> deleteTransaction(int id, int typeId) async {
+    final db = await _dbHelper.database;
+
+    // Eliminar de transactions
+    await db.delete('transactions', where: 'id = ?', whereArgs: [id]);
+
+    // Eliminar de incomes o expenses
+    if (typeId == 1) {
+      await db.delete('incomes', where: 'id = ?', whereArgs: [id]);
+    } else if (typeId == 2) {
+      await db.delete('expenses', where: 'id = ?', whereArgs: [id]);
+    }
+  }
+
+  // Calcular el total de transacciones por tipo
+  Future<double> calculateTotalByType(int typeId) async {
     final db = await _dbHelper.database;
     final result = await db.rawQuery('''
       SELECT SUM(amount) as total 
       FROM transactions 
-    ''');
+      WHERE type_id = ?
+    ''', [typeId]);
 
-    return result.isNotEmpty ? result.first['total'] ?? 0.0 : 0.0;
-  }
-  //Calculate Total Expense;
-  Future<Object> calculateTotalExpense() async {
-    final db = await _dbHelper.database;
-    final result = await db.rawQuery('''
-      SELECT SUM(amount) as total 
-      FROM transactions 
-      WHERE type = 'expense'
-    ''');
-
-    return result.isNotEmpty ? result.first['total'] ?? 0.0 : 0.0;
-  }
-  //Calculate Total weekly Income;
-  Future<Object> calculateTotalWeeklyIncome() async {
-    final db = await _dbHelper.database;
-    final result = await db.rawQuery('''
-      SELECT SUM(amount) as total 
-      FROM transactions 
-      WHERE type = 'income'
-      AND created_at >= date('now', '-7 days')
-    ''');
-
-    return result.isNotEmpty ? result.first['total'] ?? 0.0 : 0.0;
-  }
-
-  //Calculate weekly Food Expense;
-  Future<Object> calculateTotalWeeklyFoodExpense() async {
-    final db = await _dbHelper.database;
-    final result = await db.rawQuery('''
-      SELECT SUM(amount) as total 
-      FROM transactions 
-      WHERE type = 'expense'
-      AND category_id = 1
-      AND created_at >= date('now', '-7 days')
-    ''');
-
-    return result.isNotEmpty ? result.first['total'] ?? 0.0 : 0.0;
-  }
-
-  //filteredTransactions
-  Future<List<Map<String, dynamic>>> getFilteredTransactions(String type, String category, String date) async {
-    final db = await _dbHelper.database;
-    return await db.query('transactions', where: 'type = ? AND category_id = ? AND date = ?', whereArgs: [type, category, date]);
+    return result.isNotEmpty ? (result.first['total'] ?? 0.0) as double : 0.0;
   }
 
   //calculateGoal
@@ -95,18 +118,6 @@ class TransactionService {
       SELECT SUM(amount) as total 
       FROM transactions 
       WHERE type = 'goal'
-    ''');
-
-    return result.isNotEmpty ? result.first['total'] ?? 0.0 : 0.0;
-  }
-
-  //calculateTotalIncome
-  Future<Object> calculateTotalIncome() async {
-    final db = await _dbHelper.database;
-    final result = await db.rawQuery('''
-      SELECT SUM(amount) as total 
-      FROM transactions 
-      WHERE type = 'income'
     ''');
 
     return result.isNotEmpty ? result.first['total'] ?? 0.0 : 0.0;

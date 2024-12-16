@@ -281,7 +281,6 @@ class DatabaseHelper {
     //goals-categories
     await db.insert('goal_categories', {'goal_id': 1, 'category_id': 1});
     await db.insert('goal_categories', {'goal_id': 2, 'category_id': 2});
-
     //budgets
     await db.insert('budgets', {'user_id': 1, 'category_id': 1, 'amount': 100.0, 'date': '2024-11-29'});
     await db.insert('budgets', {'user_id': 1, 'category_id': 2, 'amount': 50.0, 'date': '2024-11-29'});
@@ -290,17 +289,6 @@ class DatabaseHelper {
     await db.insert('budgets', {'user_id': 1, 'category_id': 5, 'amount': 100.0, 'date': '2024-11-29'});
     await db.insert('budgets', {'user_id': 1, 'category_id': 6, 'amount': 50.0, 'date': '2024-11-29'});
     await db.insert('budgets', {'user_id': 1, 'category_id': 7, 'amount': 50.0, 'date': '2024-11-29'});
-    //incomes
-    await db.insert('incomes', {'amount': 100.0, 'category_id': 1, 'date': '2024-11-29', 'time': '12:00:00', 'description': 'Income 1', 'icon_id': 2});
-    await db.insert('incomes', {'amount': 200.0, 'category_id': 2, 'date': '2024-11-29', 'time': '12:00:00', 'description': 'Income 2', 'icon_id': 3});
-    await db.insert('incomes', {'amount': 300.0, 'category_id': 3, 'date': '2024-11-29', 'time': '12:00:00', 'description': 'Income 3', 'icon_id': 4});
-    await db.insert('incomes', {'amount': 400.0, 'category_id': 4, 'date': '2024-11-29', 'time': '12:00:00', 'description': 'Income 4', 'icon_id': 5});
-    await db.insert('incomes', {'amount': 500.0, 'category_id': 5, 'date': '2024-11-29', 'time': '12:00:00', 'description': 'Income 5', 'icon_id': 6});
-    await db.insert('incomes', {'amount': 600.0, 'category_id': 6, 'date': '2024-11-29', 'time': '12:00:00', 'description': 'Income 6', 'icon_id': 7});
-    //expenses
-    await db.insert('expenses', {'amount': 100.0, 'category_id': 1, 'date': '2024-11-29', 'time': '12:00:00', 'description': 'Expense 1', 'icon_id': 2});
-    await db.insert('expenses', {'amount': 200.0, 'category_id': 2, 'date': '2024-11-29', 'time': '12:00:00', 'description': 'Expense 2', 'icon_id': 3});
-    await db.insert('expenses', {'amount': 300.0, 'category_id': 3, 'date': '2024-11-29', 'time': '12:00:00', 'description': 'Expense 3', 'icon_id': 4});
     //goals
     await db.insert('goals', {'user_id': 1, 'name': 'Buy a new car', 'amount': 10000.0, 'targetDate': '2022-12-31'});
     await db.insert('goals', {'user_id': 1, 'name': 'Buy a new house', 'amount': 50000.0, 'targetDate': '2025-12-31'});
@@ -323,7 +311,6 @@ class DatabaseHelper {
     //reports
     await db.insert('reports', {'period_type': 'monthly', 'start_date': '2024-11-01', 'end_date': '2024-11-30', 'total_income': 1000.0, 'total_expense': 500.0, 'user_id': 1});
     await db.insert('reports', {'period_type': 'monthly', 'start_date': '2024-12-01', 'end_date': '2024-12-31', 'total_income': 2000.0, 'total_expense': 1000.0, 'user_id': 1});
-
     //user category preferences
     await db.insert('user_category_preferences', {'user_id': 1, 'category_id': 1, 'preferred_budget': 100.0});
     await db.insert('user_category_preferences', {'user_id': 1, 'category_id': 2, 'preferred_budget': 50.0});
