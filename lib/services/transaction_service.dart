@@ -145,4 +145,6 @@ class TransactionService {
     final result = await db.query('categories', where: 'id = ?', whereArgs: [categoryId]);
     return result.isNotEmpty ? result.first['name'] : 'Unknown';
   }
+
+
 }

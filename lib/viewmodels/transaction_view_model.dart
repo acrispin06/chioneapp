@@ -24,7 +24,6 @@ class TransactionViewModel with ChangeNotifier {
     _setLoadingState(true);
     try {
       _transactions = await _transactionService.getAllTransactions();
-      await _calculateTotals();
     } catch (e) {
       _setErrorMessage('Error fetching transactions: $e');
     } finally {
@@ -60,6 +59,7 @@ class TransactionViewModel with ChangeNotifier {
   Future<void> addTransaction(Map<String, dynamic> transaction) async {
     await _transactionService.addTransaction(transaction);
     await fetchAllTransactions();
+    await fetchSummaryData();
   }
 
   Future<void> updateTransaction(Map<String, dynamic> transaction) async {
@@ -72,11 +72,20 @@ class TransactionViewModel with ChangeNotifier {
     await fetchAllTransactions();
   }
 
-  Future<void> _calculateTotals() async {
-    _totalIncome = await _transactionService.calculateTotalByType(1); // Ingresos
-    _totalExpense = await _transactionService.calculateTotalByType(2); // Gastos
-    notifyListeners();
+  //fetchSummaryData
+  Future<void> fetchSummaryData() async {
+    _setLoadingState(true);
+    try {
+      _totalIncome = await _transactionService.calculateTotalByType(1);
+      _totalExpense = await _transactionService.calculateTotalByType(2);
+      notifyListeners();
+    } catch (e) {
+      _setErrorMessage('Failed to load summary data: $e');
+    } finally {
+      _setLoadingState(false);
+    }
   }
+
 
   void _setLoadingState(bool state) {
     _isLoading = state;
