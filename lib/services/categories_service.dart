@@ -52,7 +52,7 @@ class CategoryService {
     final db = await _dbHelper.database;
     final maps = await db.query(
       'categories',
-      where: 'type = ?',
+      where: 'type_id = ?',
       whereArgs: [type],
     );
 

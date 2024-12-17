@@ -1,7 +1,7 @@
 class Category {
   int? id;
   String name;
-  int type;
+  int type_id;
   int? iconId;
   DateTime createdAt;
   DateTime updatedAt;
@@ -9,7 +9,7 @@ class Category {
   Category({
     this.id,
     required this.name,
-    required this.type,
+    required this.type_id,
     this.iconId,
     required this.createdAt,
     required this.updatedAt,
@@ -19,7 +19,7 @@ class Category {
     return {
       'id': id,
       'name': name,
-      'type': type,
+      'type_id': type_id,
       'icon_id': iconId,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
@@ -30,7 +30,7 @@ class Category {
     return Category(
       id: map['id'],
       name: map['name'],
-      type: map['type'],
+      type_id: map['type_id'],
       iconId: map['icon_id'],
       createdAt: DateTime.parse(map['created_at']),
       updatedAt: DateTime.parse(map['updated_at']),
