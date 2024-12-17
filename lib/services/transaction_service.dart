@@ -14,8 +14,9 @@ class TransactionService {
         t.time,
         t.description,
         c.name AS category_name,
-        i.icon_path AS icon_path,
+        COALESCE(i.icon_path, 'assets/icons/default.png') AS icon_path,
         tt.type_name AS type_name,
+        COALESCE(t.icon_id, 1) AS icon_id,
         t.type_id
       FROM transactions t
       JOIN categories c ON t.category_id = c.id
@@ -121,6 +122,21 @@ class TransactionService {
     ''');
 
     return result.isNotEmpty ? result.first['total'] ?? 0.0 : 0.0;
+  }
+
+  //getCategoriesByType
+  Future<List<Map<String, dynamic>>> getCategoriesByType(int typeId) async {
+    final db = await _dbHelper.database;
+    return await db.query('categories', where: 'type_id = ?', whereArgs: [typeId]);
+  }
+
+  //getIcons
+  Future<Map<int, String>> getIcons() async {
+    final db = await _dbHelper.database;
+    final icons = await db.query('icons');
+    return {
+      for (var icon in icons) icon['icon_id'] as int: icon['icon_path'] as String,
+    };
   }
 
   //getCategoryName

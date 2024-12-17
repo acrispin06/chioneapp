@@ -9,12 +9,16 @@ class TransactionViewModel with ChangeNotifier {
   List<Map<String, dynamic>> _transactions = [];
   double _totalIncome = 0.0;
   double _totalExpense = 0.0;
+  List<Map<String, dynamic>> _categories = [];
+  Map<int, String> _icons = {};
 
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
   List<Map<String, dynamic>> get transactions => _transactions;
   double get totalIncome => _totalIncome;
   double get totalExpense => _totalExpense;
+  List<Map<String, dynamic>> get categories => _categories;
+  Map<int, String> get icons => _icons;
 
   Future<void> fetchAllTransactions() async {
     _setLoadingState(true);
@@ -23,6 +27,31 @@ class TransactionViewModel with ChangeNotifier {
       await _calculateTotals();
     } catch (e) {
       _setErrorMessage('Error fetching transactions: $e');
+    } finally {
+      _setLoadingState(false);
+    }
+  }
+
+  //fetchCategoriesByType
+  Future<void> fetchCategoriesByType(int typeId) async {
+    _setLoadingState(true);
+    try {
+      _categories = await _transactionService.getCategoriesByType(typeId);
+      notifyListeners();
+    } catch (e) {
+      _setErrorMessage('Failed to load categories: $e');
+    } finally {
+      _setLoadingState(false);
+    }
+  }
+
+  Future<void> fetchIcons() async {
+    _setLoadingState(true);
+    try {
+      _icons = await _transactionService.getIcons();
+      notifyListeners();
+    } catch (e) {
+      _setErrorMessage('Failed to load icons: $e');
     } finally {
       _setLoadingState(false);
     }

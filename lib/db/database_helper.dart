@@ -67,11 +67,11 @@ class DatabaseHelper {
     CREATE TABLE IF NOT EXISTS categories (
       id INTEGER PRIMARY KEY,
       name TEXT NOT NULL,
-      type INTEGER,
+      type_id INTEGER,
       icon_id INTEGER,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (type) REFERENCES transaction_types(type_id),
+      FOREIGN KEY (type_id) REFERENCES transaction_types(type_id),
       FOREIGN KEY (icon_id) REFERENCES icons(icon_id)
     );
     ''');
@@ -216,7 +216,7 @@ class DatabaseHelper {
       date TEXT NOT NULL,
       time TEXT NOT NULL,
       description TEXT,
-      icon_id INTEGER,
+      icon_id INTEGER NOT NULL DEFAULT 1,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (category_id) REFERENCES categories(id),
@@ -270,14 +270,20 @@ class DatabaseHelper {
     await db.insert('icons', {'icon_name': 'health', 'icon_path': 'assets/icons/health.png'});
     await db.insert('icons', {'icon_name': 'education', 'icon_path': 'assets/icons/education.png'});
     await db.insert('icons', {'icon_name': 'others', 'icon_path': 'assets/icons/others.png'});
-    //categories
-    await db.insert('categories', {'name': 'Food', 'type': 2, 'icon_id': 2});
-    await db.insert('categories', {'name': 'Transport', 'type': 2, 'icon_id': 3});
-    await db.insert('categories', {'name': 'Shopping', 'type': 2, 'icon_id': 4});
-    await db.insert('categories', {'name': 'Entertainment', 'type': 2, 'icon_id': 5});
-    await db.insert('categories', {'name': 'Health', 'type': 2, 'icon_id': 6});
-    await db.insert('categories', {'name': 'Education', 'type': 2, 'icon_id': 7});
-    await db.insert('categories', {'name': 'Others', 'type': 2, 'icon_id': 8});
+    //categories types expenses
+    await db.insert('categories', {'name': 'Food', 'type_id': 2, 'icon_id': 2});
+    await db.insert('categories', {'name': 'Transport', 'type_id': 2, 'icon_id': 3});
+    await db.insert('categories', {'name': 'Shopping', 'type_id': 2, 'icon_id': 4});
+    await db.insert('categories', {'name': 'Entertainment', 'type_id': 2, 'icon_id': 5});
+    await db.insert('categories', {'name': 'Health', 'type_id': 2, 'icon_id': 6});
+    await db.insert('categories', {'name': 'Education', 'type_id': 2, 'icon_id': 7});
+    await db.insert('categories', {'name': 'Others', 'type_id': 2, 'icon_id': 8});
+    //categories type incomes
+    await db.insert('categories', {'name': 'Salary', 'type_id': 1, 'icon_id': 1});
+    await db.insert('categories', {'name': 'Freelance', 'type_id': 1, 'icon_id': 1});
+    await db.insert('categories', {'name': 'Investment', 'type_id': 1, 'icon_id': 1});
+    await db.insert('categories', {'name': 'Savings', 'type_id': 1, 'icon_id': 1});
+    await db.insert('categories', {'name': 'Others', 'type_id': 1, 'icon_id': 1});
     //goals-categories
     await db.insert('goal_categories', {'goal_id': 1, 'category_id': 1});
     await db.insert('goal_categories', {'goal_id': 2, 'category_id': 2});
