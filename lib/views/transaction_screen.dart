@@ -282,14 +282,16 @@ class _TransactionScreenState extends State<TransactionScreen> {
         if (viewModel.errorMessage.isNotEmpty) {
           return Center(child: Text(viewModel.errorMessage, style: const TextStyle(color: Colors.red)));
         }
-        return Container(
-          padding: const EdgeInsets.all(10),
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _summaryCard("Income", "S/ ${viewModel.totalIncome.toStringAsFixed(2)}", Colors.green),
-              _summaryCard("Expense", "S/ ${viewModel.totalExpense.toStringAsFixed(2)}", Colors.red),
-              _summaryCard("Balance", "S/ ${(viewModel.totalIncome - viewModel.totalExpense).toStringAsFixed(2)}", Colors.blue),
+              _summaryCard("Income", "S/ ${viewModel.totalIncome.toStringAsFixed(2)}", Colors.green.shade400),
+              SizedBox(width: 16),
+              _summaryCard("Expense", "S/ ${viewModel.totalExpense.toStringAsFixed(2)}", Colors.red.shade400),
+              SizedBox(width: 16),
+              _summaryCard("Balance", "S/ ${(viewModel.totalIncome - viewModel.totalExpense).toStringAsFixed(2)}", Colors.blue.shade400),
             ],
           ),
         );
@@ -299,20 +301,62 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
   Widget _summaryCard(String title, String amount, Color color) {
     return Expanded(
-      child: Card(
-        color: color.withOpacity(0.1),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            children: [
-              Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color)),
-              Text(amount, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
-            ],
-          ),
+      child: Container(
+        padding: const EdgeInsets.all(12.0),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12.0),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.3),
+              blurRadius: 6.0,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  title == "Income" ? Icons.trending_up :
+                  title == "Expense" ? Icons.trending_down :
+                  Icons.account_balance_wallet,
+                  color: Color.fromRGBO(16, 97, 66, 100),
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Color.fromRGBO(16, 97, 66, 100),
+                    letterSpacing: 1.1,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              amount,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color.fromRGBO(16, 97, 66, 100),
+                shadows: [
+                  Shadow(
+                    blurRadius: 6.0,
+                    color: color.withOpacity(0.4),
+                    offset: const Offset(1, 1),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
-
   }
-
 }
