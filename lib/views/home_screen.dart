@@ -32,13 +32,22 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.green.shade50,
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.green.shade700,
         automaticallyImplyLeading: false,
         title: _buildAppBarTitle(),
         actions: [_buildNotificationIcon(context)],
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF664FA2), Color(0xFF7660B3)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: IndexedStack(
         index: _selectedIndex,
@@ -55,14 +64,23 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildAppBarTitle() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
+      children: [
         Text(
           "Hi, Welcome Back",
-          style: TextStyle(fontSize: 18, color: Colors.white),
+          style: TextStyle(
+            fontSize: 18,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
+        const SizedBox(height: 4),
         Text(
-          "Good Morning",
-          style: TextStyle(fontSize: 14, color: Colors.white70),
+          _getGreeting(),
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.white70,
+            fontStyle: FontStyle.italic,
+          ),
         ),
       ],
     );
@@ -70,14 +88,50 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Método para construir el botón de notificaciones
   Widget _buildNotificationIcon(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.notifications),
+    final hasUnreadNotifications = true; // Cambiar a false si no hay notificaciones
+
+    return hasUnreadNotifications
+        ? IconButton(
+      icon: Stack(
+        children: [
+          const Icon(Icons.notifications, color: Colors.white),
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              constraints: const BoxConstraints(
+                minWidth: 8,
+                minHeight: 8,
+              ),
+            ),
+          ),
+        ],
+      ),
       onPressed: () {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => NotificationScreen()),
         );
       },
-    );
+    )
+        : const SizedBox.shrink(); // No muestra nada si no hay notificaciones
+  }
+
+
+  // Método para obtener el saludo según la hora del día
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return "Good Morning";
+    } else if (hour < 17) {
+      return "Good Afternoon";
+    } else {
+      return "Good Evening";
+    }
   }
 }
