@@ -325,9 +325,6 @@ class DatabaseHelper {
     await db.insert('user_category_preferences', {'user_id': 1, 'category_id': 5, 'preferred_budget': 100.0});
     await db.insert('user_category_preferences', {'user_id': 1, 'category_id': 6, 'preferred_budget': 50.0});
     await db.insert('user_category_preferences', {'user_id': 1, 'category_id': 7, 'preferred_budget': 50.0});
-    //transactions
-    await db.insert('transactions', {'amount': 100.0, 'category_id': 1, 'type_id': 1, 'date': '2024-11-29', 'time': '12:00:00', 'description': 'Salary Income', 'icon_id': 2});
-    await db.insert('transactions', {'amount': 50.0, 'category_id': 2, 'type_id': 2, 'date': '2024-11-29', 'time': '14:00:00', 'description': 'Grocery Shopping', 'icon_id': 3});
   }
   //CRUD Operations for each model
   //Crud for user

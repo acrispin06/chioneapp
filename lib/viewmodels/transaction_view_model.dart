@@ -24,6 +24,7 @@ class TransactionViewModel with ChangeNotifier {
     _setLoadingState(true);
     try {
       _transactions = await _transactionService.getAllTransactions();
+      notifyListeners();
     } catch (e) {
       _setErrorMessage('Error fetching transactions: $e');
     } finally {
@@ -31,7 +32,6 @@ class TransactionViewModel with ChangeNotifier {
     }
   }
 
-  //fetchCategoriesByType
   Future<void> fetchCategoriesByType(int typeId) async {
     _setLoadingState(true);
     try {
@@ -56,6 +56,19 @@ class TransactionViewModel with ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>?> fetchTransactionById(int transactionId) async {
+    _setLoadingState(true);
+    try {
+      final transaction = await _transactionService.getTransactionById(transactionId);
+      return transaction;
+    } catch (e) {
+      _setErrorMessage('Failed to fetch transaction: $e');
+      return null;
+    } finally {
+      _setLoadingState(false);
+    }
+  }
+
   Future<void> addTransaction(Map<String, dynamic> transaction) async {
     await _transactionService.addTransaction(transaction);
     await fetchAllTransactions();
@@ -65,14 +78,17 @@ class TransactionViewModel with ChangeNotifier {
   Future<void> updateTransaction(Map<String, dynamic> transaction) async {
     await _transactionService.updateTransaction(transaction);
     await fetchAllTransactions();
+    await fetchSummaryData();
+    notifyListeners();
   }
 
   Future<void> deleteTransaction(int id, int typeId) async {
     await _transactionService.deleteTransaction(id, typeId);
     await fetchAllTransactions();
+    await fetchSummaryData();
+    notifyListeners();
   }
 
-  //fetchSummaryData
   Future<void> fetchSummaryData() async {
     _setLoadingState(true);
     try {
@@ -86,7 +102,6 @@ class TransactionViewModel with ChangeNotifier {
     }
   }
 
-
   void _setLoadingState(bool state) {
     _isLoading = state;
     notifyListeners();
@@ -97,7 +112,6 @@ class TransactionViewModel with ChangeNotifier {
     notifyListeners();
   }
 
-  //getCategoryName
   Future<Object?> getCategoryName(int categoryId) async {
     return await _transactionService.getCategoryName(categoryId);
   }

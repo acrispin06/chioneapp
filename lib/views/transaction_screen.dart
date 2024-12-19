@@ -1,3 +1,4 @@
+import 'package:chioneapp/views/transaction_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/transaction_view_model.dart';
@@ -37,48 +38,56 @@ class _TransactionScreenState extends State<TransactionScreen> {
   void _initializeCategorySelection() {
     final viewModel = Provider.of<TransactionViewModel>(context, listen: false);
     if (viewModel.categories.isNotEmpty) {
+      final firstCategory = viewModel.categories.first;
       setState(() {
-        _selectedCategoryId = viewModel.categories.first['id'];
-        _selectedIconId = viewModel.categories.first['icon_id'];
+        _selectedCategoryId = firstCategory['id'] as int;
+        _selectedIconId = firstCategory['icon_id'] as int;
+      });
+    } else {
+      // Evita asignar un valor no válido
+      setState(() {
+        _selectedCategoryId = null;
+        _selectedIconId = null;
       });
     }
   }
 
   // UI para agregar una nueva transacción
   Future<void> _showAddTransactionDialog() async {
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text("Add New Transaction", style: TextStyle(fontWeight: FontWeight.bold)),
-        content: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                // Amount
-                _buildTextField("Amount", _amountController, TextInputType.number),
-                // Description
-                _buildTextField("Description", _descriptionController, TextInputType.text),
-                // Type
-                _buildTypeDropdown(),
-                // Category
-                _buildCategoryDropdown(),
-                // Date
-                _buildDatePicker(),
-                // Time
-                _buildTimePicker(),
-              ],
-            ),
+  final context = this.context;
+  await showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      title: const Text("Add New Transaction", style: TextStyle(fontWeight: FontWeight.bold)),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              // Amount
+              _buildTextField("Amount", _amountController, TextInputType.number),
+              // Description
+              _buildTextField("Description", _descriptionController, TextInputType.text),
+              // Type
+              _buildTypeDropdown(),
+              // Category
+              _buildCategoryDropdown(),
+              // Date
+              _buildDatePicker(),
+              // Time
+              _buildTimePicker(),
+            ],
           ),
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text("Cancel")),
-          ElevatedButton(onPressed: _addTransaction, child: const Text("Add")),
-        ],
       ),
-    );
-  }
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text("Cancel")),
+        ElevatedButton(onPressed: _addTransaction, child: const Text("Add")),
+      ],
+    ),
+  );
+}
 
   Widget _buildTextField(String label, TextEditingController controller, TextInputType type) {
     return TextFormField(
@@ -125,11 +134,13 @@ class _TransactionScreenState extends State<TransactionScreen> {
             );
           }).toList(),
           onChanged: (value) {
-            final selectedCategory = viewModel.categories.firstWhere((c) => c['id'] == value);
-            setState(() {
-              _selectedCategoryId = value;
-              _selectedIconId = selectedCategory['icon_id'];
-            });
+            if (value != null) {
+              final selectedCategory = viewModel.categories.firstWhere((c) => c['id'] == value);
+              setState(() {
+                _selectedCategoryId = value;
+                _selectedIconId = selectedCategory['icon_id'];
+              });
+            }
           },
         );
       },
@@ -205,73 +216,90 @@ class _TransactionScreenState extends State<TransactionScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Transactions"),
-        //estilo de texto del titulo
         titleTextStyle: const TextStyle(
-          color: Colors.black,
+          color: Colors.white,
           fontSize: 24,
           fontWeight: FontWeight.bold,
         ),
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.green.shade700,
         centerTitle: true,
       ),
       body: Column(
         children: [
           _buildSummarySection(),
-          Expanded(
-            child: Consumer<TransactionViewModel>(
-              builder: (context, viewModel, child) {
-                if (viewModel.isLoading) return const Center(child: CircularProgressIndicator());
-                if (viewModel.errorMessage.isNotEmpty) {
-                  return Center(child: Text(viewModel.errorMessage, style: const TextStyle(color: Colors.red)));
-                }
-                if (viewModel.transactions.isEmpty) {
-                  return const Center(child: Text("No transactions available."));
-                }
-
-                return ListView.builder(
-                  itemCount: viewModel.transactions.length,
-                  itemBuilder: (context, index) {
-                    final transaction = viewModel.transactions[index];
-                    final type = transaction['type_name'];
-                    final iconPath = viewModel.icons[transaction['icon_id']] ?? 'assets/icons/default.png';
-                    return Card(
-                      elevation: 2,
-                      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: type == 'income' ? Colors.green.shade100 : Colors.red.shade100,
-                          child: Image.asset(iconPath, width: 30, height: 30),
-                        ),
-                        title: Text(
-                          transaction['description'],
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        //show only date in format year-month-day
-                        subtitle: Text("${transaction['date'].toString().split('T')[0]} - ${transaction['time']}"),
-                        trailing: Text(
-                          "S/ ${transaction['amount']}",
-                          style: TextStyle(
-                            color: type == 'income' ? Colors.green.shade700 : Colors.red.shade700,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
+          Expanded(child: _buildTransactionList()),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddTransactionDialog,
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.green.shade700,
         icon: const Icon(Icons.add),
         label: const Text("Add Transaction"),
       ),
+    );
+  }
+
+  Widget _buildTransactionList() {
+    return Consumer<TransactionViewModel>(
+      builder: (context, viewModel, _) {
+        if (viewModel.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (viewModel.errorMessage.isNotEmpty) {
+          return Center(
+            child: Text(
+              viewModel.errorMessage,
+              style: const TextStyle(color: Colors.red, fontSize: 16),
+            ),
+          );
+        }
+        if (viewModel.transactions.isEmpty) {
+          return const Center(child: Text("No transactions available."));
+        }
+        return ListView.builder(
+          itemCount: viewModel.transactions.length,
+          itemBuilder: (context, index) {
+            final transaction = viewModel.transactions[index];
+            final type = transaction['type_name'];
+            final iconPath = viewModel.icons[transaction['icon_id']] ?? 'assets/icons/default.png';
+
+            return GestureDetector(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => TransactionDetailScreen(transactionId: transaction['id']),
+                ),
+              ),
+              child: Card(
+                elevation: 3,
+                margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: type == 'income' ? Colors.green.shade100 : Colors.red.shade100,
+                    child: Image.asset(iconPath, width: 30, height: 30),
+                  ),
+                  title: Text(
+                    transaction['description'],
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    "${transaction['date'].toString().split('T')[0]} - ${transaction['time']}",
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  trailing: Text(
+                    "S/ ${transaction['amount']}",
+                    style: TextStyle(
+                      color: type == 'income' ? Colors.green.shade700 : Colors.red.shade700,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

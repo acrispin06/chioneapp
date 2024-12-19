@@ -1,4 +1,5 @@
 import '../db/database_helper.dart';
+import 'package:sqflite/sqflite.dart';
 
 class TransactionService {
   final DatabaseHelper _dbHelper = DatabaseHelper();
@@ -7,23 +8,49 @@ class TransactionService {
   Future<List<Map<String, dynamic>>> getAllTransactions() async {
     final db = await _dbHelper.database;
     return await db.rawQuery('''
-      SELECT 
-        t.id,
-        t.amount,
-        t.date,
-        t.time,
-        t.description,
-        c.name AS category_name,
-        COALESCE(i.icon_path, 'assets/icons/default.png') AS icon_path,
-        tt.type_name AS type_name,
-        COALESCE(t.icon_id, 1) AS icon_id,
-        t.type_id
-      FROM transactions t
-      JOIN categories c ON t.category_id = c.id
-      JOIN icons i ON t.icon_id = i.icon_id
-      JOIN transaction_types tt ON t.type_id = tt.type_id
-      ORDER BY t.date DESC
-    ''');
+    SELECT 
+      t.id,
+      t.amount,
+      t.date,
+      t.time,
+      t.description,
+      t.category_id,
+      c.name AS category_name,
+      COALESCE(i.icon_path, 'assets/icons/default.png') AS icon_path,
+      tt.type_name AS type_name,
+      COALESCE(t.icon_id, 1) AS icon_id,
+      t.type_id
+    FROM transactions t
+    JOIN categories c ON t.category_id = c.id
+    JOIN icons i ON t.icon_id = i.icon_id
+    JOIN transaction_types tt ON t.type_id = tt.type_id
+    ORDER BY t.date DESC
+  ''');
+  }
+
+  Future<Map<String, dynamic>?> getTransactionById(int transactionId) async {
+    final db = await _dbHelper.database;
+    final result = await db.rawQuery('''
+    SELECT 
+      t.id,
+      t.amount,
+      t.date,
+      t.time,
+      t.description,
+      t.category_id,
+      c.name AS category_name,
+      COALESCE(i.icon_path, 'assets/icons/default.png') AS icon_path,
+      tt.type_name AS type_name,
+      COALESCE(t.icon_id, 1) AS icon_id,
+      t.type_id
+    FROM transactions t
+    JOIN categories c ON t.category_id = c.id
+    LEFT JOIN icons i ON t.icon_id = i.icon_id
+    JOIN transaction_types tt ON t.type_id = tt.type_id
+    WHERE t.id = ?
+  ''', [transactionId]);
+
+    return result.isNotEmpty ? result.first : null;
   }
 
   // Insertar transacción con sincronización
@@ -67,23 +94,66 @@ class TransactionService {
   Future<int> updateTransaction(Map<String, dynamic> transaction) async {
     final db = await _dbHelper.database;
 
-    // Actualizar en transactions
+    // Preparar los datos para 'transactions' (tabla principal)
+    final transactionData = {
+      'amount': transaction['amount'],
+      'description': transaction['description'],
+      'category_id': transaction['category_id'],
+      'icon_id': transaction['icon_id'],
+      'date': transaction['date'],
+      'time': transaction['time'],
+      'updated_at': transaction['updated_at'],
+    };
+
+    // Actualizar en la tabla 'transactions'
     int rowsAffected = await db.update(
       'transactions',
-      transaction,
+      transactionData,
       where: 'id = ?',
       whereArgs: [transaction['id']],
     );
 
-    // Actualizar en incomes o expenses
-    if (transaction['type_id'] == 1) {
-      await db.update('incomes', transaction, where: 'id = ?', whereArgs: [transaction['id']]);
-    } else if (transaction['type_id'] == 2) {
-      await db.update('expenses', transaction, where: 'id = ?', whereArgs: [transaction['id']]);
+    // Comprobar si el tipo de transacción cambió
+    final oldTransaction = await db.query(
+      'transactions',
+      columns: ['type_id'],
+      where: 'id = ?',
+      whereArgs: [transaction['id']],
+    );
+
+    final int oldTypeId = oldTransaction.isNotEmpty ? oldTransaction.first['type_id'] as int : -1;
+    final int newTypeId = transaction['type_id'];
+
+    // Preparar datos para la tabla 'incomes' o 'expenses'
+    final subTableData = {
+      'id': transaction['id'], // Asegura consistencia del ID
+      'amount': transaction['amount'],
+      'description': transaction['description'],
+      'category_id': transaction['category_id'],
+      'date': transaction['date'],
+      'time': transaction['time'],
+      'updated_at': transaction['updated_at'],
+    };
+
+    // Si el tipo cambió, eliminar de la tabla anterior
+    if (oldTypeId != newTypeId) {
+      if (oldTypeId == 1) {
+        await db.delete('incomes', where: 'id = ?', whereArgs: [transaction['id']]);
+      } else if (oldTypeId == 2) {
+        await db.delete('expenses', where: 'id = ?', whereArgs: [transaction['id']]);
+      }
+    }
+
+    // Actualizar o insertar en la tabla nueva
+    if (newTypeId == 1) {
+      await db.insert('incomes', subTableData, conflictAlgorithm: ConflictAlgorithm.replace);
+    } else if (newTypeId == 2) {
+      await db.insert('expenses', subTableData, conflictAlgorithm: ConflictAlgorithm.replace);
     }
 
     return rowsAffected;
   }
+
 
   // Eliminar transacción con sincronización
   Future<void> deleteTransaction(int id, int typeId) async {
@@ -104,13 +174,19 @@ class TransactionService {
   Future<double> calculateTotalByType(int typeId) async {
     final db = await _dbHelper.database;
     final result = await db.rawQuery('''
-      SELECT SUM(amount) as total 
-      FROM transactions 
-      WHERE type_id = ?
-    ''', [typeId]);
+    SELECT SUM(amount) as total 
+    FROM transactions 
+    WHERE type_id = ?
+  ''', [typeId]);
 
-    return result.isNotEmpty ? (result.first['total'] ?? 0.0) as double : 0.0;
+    // Convertir explícitamente a double
+    if (result.isNotEmpty && result.first['total'] != null) {
+      return (result.first['total'] as num).toDouble();
+    }
+    return 0.0;
   }
+
+
 
   //calculateGoal
   Future<Object> calculateGoal() async {
