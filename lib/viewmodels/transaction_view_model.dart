@@ -76,11 +76,28 @@ class TransactionViewModel with ChangeNotifier {
   }
 
   Future<void> updateTransaction(Map<String, dynamic> transaction) async {
-    await _transactionService.updateTransaction(transaction);
-    await fetchAllTransactions();
-    await fetchSummaryData();
-    notifyListeners();
+    _setLoadingState(true);
+
+    try {
+      // Obtener el tipo anterior
+      final previousTransaction = _transactions.firstWhere((t) => t['id'] == transaction['id']);
+      transaction['previous_type_id'] = previousTransaction['type_id'];
+
+      await _transactionService.updateTransaction(transaction);
+
+      // Refrescar los datos después de la actualización
+      await fetchAllTransactions();
+      await fetchSummaryData();
+
+      notifyListeners();
+    } catch (e) {
+      _setErrorMessage('Error updating transaction: $e');
+    } finally {
+      _setLoadingState(false);
+    }
   }
+
+
 
   Future<void> deleteTransaction(int id, int typeId) async {
     await _transactionService.deleteTransaction(id, typeId);

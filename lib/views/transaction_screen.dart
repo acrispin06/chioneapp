@@ -26,7 +26,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final viewModel = Provider.of<TransactionViewModel>(context, listen: false);
+      final viewModel = Provider.of<TransactionViewModel>(
+          context, listen: false);
       await viewModel.fetchIcons();
       await viewModel.fetchCategoriesByType(_selectedTypeId);
       viewModel.fetchAllTransactions();
@@ -44,7 +45,6 @@ class _TransactionScreenState extends State<TransactionScreen> {
         _selectedIconId = firstCategory['icon_id'] as int;
       });
     } else {
-      // Evita asignar un valor no válido
       setState(() {
         _selectedCategoryId = null;
         _selectedIconId = null;
@@ -52,51 +52,111 @@ class _TransactionScreenState extends State<TransactionScreen> {
     }
   }
 
-  // UI para agregar una nueva transacción
   Future<void> _showAddTransactionDialog() async {
-  final context = this.context;
-  await showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      title: const Text("Add New Transaction", style: TextStyle(fontWeight: FontWeight.bold)),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
+    final context = this.context;
+    await showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Amount
-              _buildTextField("Amount", _amountController, TextInputType.number),
-              // Description
-              _buildTextField("Description", _descriptionController, TextInputType.text),
-              // Type
-              _buildTypeDropdown(),
-              // Category
-              _buildCategoryDropdown(),
-              // Date
-              _buildDatePicker(),
-              // Time
-              _buildTimePicker(),
+              // Title
+              Text(
+                "Add New Transaction",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Form fields
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    // Amount
+                    _buildTextField("Amount", _amountController, TextInputType.number),
+                    const SizedBox(height: 12),
+
+                    // Description
+                    _buildTextField("Description", _descriptionController, TextInputType.text),
+                    const SizedBox(height: 12),
+
+                    // Type Dropdown
+                    _buildTypeDropdown(),
+                    const SizedBox(height: 12),
+
+                    // Category Dropdown
+                    _buildCategoryDropdown(),
+                    const SizedBox(height: 12),
+
+                    // Date Picker
+                    _buildDatePicker(),
+                    const SizedBox(height: 12),
+
+                    // Time Picker
+                    _buildTimePicker(),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Actions
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(
+                      "Cancel",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: _addTransaction,
+                    icon: const Icon(Icons.add, color: Colors.white),
+                    label: const Text("Add", style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text("Cancel")),
-        ElevatedButton(onPressed: _addTransaction, child: const Text("Add")),
-      ],
-    ),
-  );
-}
+    );
+  }
 
-  Widget _buildTextField(String label, TextEditingController controller, TextInputType type) {
+
+  Widget _buildTextField(String label, TextEditingController controller,
+      TextInputType type) {
     return TextFormField(
-        controller: controller,
-        keyboardType: type,
+      controller: controller,
+      keyboardType: type,
       decoration: InputDecoration(
         labelText: label,
       ),
-      validator: (value) => value == null || value.isEmpty ? "Please enter $label" : null,
+      validator: (value) =>
+      value == null || value.isEmpty
+          ? "Please enter $label"
+          : null,
     );
   }
 
@@ -135,7 +195,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
           }).toList(),
           onChanged: (value) {
             if (value != null) {
-              final selectedCategory = viewModel.categories.firstWhere((c) => c['id'] == value);
+              final selectedCategory = viewModel.categories.firstWhere((
+                  c) => c['id'] == value);
               setState(() {
                 _selectedCategoryId = value;
                 _selectedIconId = selectedCategory['icon_id'];
@@ -150,19 +211,38 @@ class _TransactionScreenState extends State<TransactionScreen> {
   Widget _buildDatePicker() {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text("Date: ${_selectedDate.toLocal()}".split(' ')[0]),
-      trailing: const Icon(Icons.calendar_today),
-      onTap: () async {
-        final date = await showDatePicker(
-          context: context,
-          initialDate: _selectedDate,
-          firstDate: DateTime(2000),
-          lastDate: DateTime(2100),
-        );
-        if (date != null) setState(() => _selectedDate = date);
-      },
+      title: Row(
+        children: [
+          const Text(
+            "Date:",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            "${_selectedDate.toLocal()}".split(' ')[0],
+            style: TextStyle(fontSize: 16, color: Colors.black),
+          ),
+        ],
+      ),
+      trailing: IconButton(
+        icon: const Icon(Icons.calendar_today),
+        onPressed: () async {
+          final date = await showDatePicker(
+            context: context,
+            initialDate: _selectedDate,
+            firstDate: DateTime(2000),
+            lastDate: DateTime(2100),
+          );
+          if (date != null) {
+            setState(() {
+              _selectedDate = date;
+            });
+          }
+        },
+      ),
     );
   }
+
 
   Widget _buildTimePicker() {
     return ListTile(
@@ -193,7 +273,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
         'updated_at': DateTime.now().toIso8601String(),
       };
 
-      await Provider.of<TransactionViewModel>(context, listen: false).addTransaction(transaction);
+      await Provider.of<TransactionViewModel>(context, listen: false)
+          .addTransaction(transaction);
       Navigator.of(context).pop();
       _clearForm();
     }
@@ -214,112 +295,104 @@ class _TransactionScreenState extends State<TransactionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Transactions"),
-        titleTextStyle: const TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
-        backgroundColor: Colors.green.shade700,
-        centerTitle: true,
-      ),
-      body: Column(
-        children: [
-          _buildSummarySection(),
-          Expanded(child: _buildTransactionList()),
+      backgroundColor: Colors.grey[50],
+      body: CustomScrollView(
+        slivers: [
+          _buildSliverAppBar(),
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                _buildSummarySection(),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(24, 24, 24, 16),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Recent Transactions',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _buildTransactionListSliver(),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddTransactionDialog,
-        backgroundColor: Colors.green.shade700,
-        icon: const Icon(Icons.add),
-        label: const Text("Add Transaction"),
+        backgroundColor: Theme
+            .of(context)
+            .colorScheme
+            .primary,
+        elevation: 4,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          "Add Transaction",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildTransactionList() {
-    return Consumer<TransactionViewModel>(
-      builder: (context, viewModel, _) {
-        if (viewModel.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (viewModel.errorMessage.isNotEmpty) {
-          return Center(
-            child: Text(
-              viewModel.errorMessage,
-              style: const TextStyle(color: Colors.red, fontSize: 16),
+  Widget _buildSliverAppBar() {
+    return SliverAppBar(
+      expandedHeight: 80,
+      floating: true,
+      pinned: true,
+      elevation: 0,
+      backgroundColor: Theme.of(context).colorScheme.primary,
+      flexibleSpace: FlexibleSpaceBar(
+        centerTitle: true, // Añadimos esta línea para centrar el título
+        title: Text(
+          'Transactions',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              colors: [
+                Theme.of(context).colorScheme.primary,
+                Theme.of(context).colorScheme.primary.withOpacity(0.8),
+              ],
             ),
-          );
-        }
-        if (viewModel.transactions.isEmpty) {
-          return const Center(child: Text("No transactions available."));
-        }
-        return ListView.builder(
-          itemCount: viewModel.transactions.length,
-          itemBuilder: (context, index) {
-            final transaction = viewModel.transactions[index];
-            final type = transaction['type_name'];
-            final iconPath = viewModel.icons[transaction['icon_id']] ?? 'assets/icons/default.png';
-
-            return GestureDetector(
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => TransactionDetailScreen(transactionId: transaction['id']),
-                ),
-              ),
-              child: Card(
-                elevation: 3,
-                margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: type == 'income' ? Colors.green.shade100 : Colors.red.shade100,
-                    child: Image.asset(iconPath, width: 30, height: 30),
-                  ),
-                  title: Text(
-                    transaction['description'],
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    "${transaction['date'].toString().split('T')[0]} - ${transaction['time']}",
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                  trailing: Text(
-                    "S/ ${transaction['amount']}",
-                    style: TextStyle(
-                      color: type == 'income' ? Colors.green.shade700 : Colors.red.shade700,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
+          ),
+        ),
+      ),
     );
   }
 
   Widget _buildSummarySection() {
     return Consumer<TransactionViewModel>(
       builder: (context, viewModel, _) {
-        if (viewModel.isLoading) return const Center(child: CircularProgressIndicator());
-        if (viewModel.errorMessage.isNotEmpty) {
-          return Center(child: Text(viewModel.errorMessage, style: const TextStyle(color: Colors.red)));
+        if (viewModel.isLoading) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: CircularProgressIndicator(),
+            ),
+          );
         }
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+        return Container(
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: Column(
             children: [
-              _summaryCard("Income", "S/ ${viewModel.totalIncome.toStringAsFixed(2)}", Colors.green.shade400),
-              SizedBox(width: 16),
-              _summaryCard("Expense", "S/ ${viewModel.totalExpense.toStringAsFixed(2)}", Colors.red.shade400),
-              SizedBox(width: 16),
-              _summaryCard("Balance", "S/ ${(viewModel.totalIncome - viewModel.totalExpense).toStringAsFixed(2)}", Colors.blue.shade400),
+              _buildBalanceCard(viewModel),
+              const SizedBox(height: 16),
+              _buildIncomeExpenseRow(viewModel),
             ],
           ),
         );
@@ -327,64 +400,282 @@ class _TransactionScreenState extends State<TransactionScreen> {
     );
   }
 
-  Widget _summaryCard(String title, String amount, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12.0),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(12.0),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 6.0,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
+  Widget _buildBalanceCard(TransactionViewModel viewModel) {
+    final balance = viewModel.totalIncome - viewModel.totalExpense;
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      color: Theme
+          .of(context)
+          .colorScheme
+          .primary,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  title == "Income" ? Icons.trending_up :
-                  title == "Expense" ? Icons.trending_down :
-                  Icons.account_balance_wallet,
-                  color: Color.fromRGBO(16, 97, 66, 100),
-                  size: 24,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Color.fromRGBO(16, 97, 66, 100),
-                    letterSpacing: 1.1,
-                  ),
-                ),
-              ],
+            const Text(
+              'Total Balance',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
-              amount,
-              style: TextStyle(
-                fontSize: 18,
+              'S/ ${balance.toStringAsFixed(2)}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 32,
                 fontWeight: FontWeight.bold,
-                color: Color.fromRGBO(16, 97, 66, 100),
-                shadows: [
-                  Shadow(
-                    blurRadius: 6.0,
-                    color: color.withOpacity(0.4),
-                    offset: const Offset(1, 1),
-                  ),
-                ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildIncomeExpenseRow(TransactionViewModel viewModel) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildSummaryTile(
+            title: "Income",
+            amount: viewModel.totalIncome,
+            icon: Icons.arrow_upward,
+            color: Colors.green,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildSummaryTile(
+            title: "Expense",
+            amount: viewModel.totalExpense,
+            icon: Icons.arrow_downward,
+            color: Colors.red,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryTile({
+    required String title,
+    required double amount,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, size: 20, color: color),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'S/ ${amount.toStringAsFixed(2)}',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransactionListSliver() {
+    return Consumer<TransactionViewModel>(
+      builder: (context, viewModel, _) {
+        if (viewModel.isLoading) {
+          return const SliverFillRemaining(
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (viewModel.transactions.isEmpty) {
+          return const SliverFillRemaining(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.receipt_long_outlined,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    "No transactions yet",
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                final transaction = viewModel.transactions[index];
+                final type = transaction['type_name'];
+                final iconPath = viewModel.icons[transaction['icon_id']] ??
+                    'assets/icons/default.png';
+                final isIncome = type == 'income';
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: InkWell(
+                    onTap: () =>
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                TransactionDetailScreen(
+                                    transactionId: transaction['id']),
+                          ),
+                        ),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: (isIncome ? Colors.green : Colors.red)
+                                    .withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Image.asset(
+                                iconPath,
+                                width: 24,
+                                height: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    transaction['description'],
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "${transaction['date'].toString().split(
+                                        'T')[0]} - ${transaction['time']}",
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'S/ ${transaction['amount']}',
+                                  style: TextStyle(
+                                    color: isIncome ? Colors.green[700] : Colors
+                                        .red[700],
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: (isIncome ? Colors.green : Colors
+                                        .red).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    type,
+                                    style: TextStyle(
+                                      color: isIncome
+                                          ? Colors.green[700]
+                                          : Colors.red[700],
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+              childCount: viewModel.transactions.length,
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -91,7 +91,7 @@ class TransactionService {
   }
 
   // Actualizar transacción con sincronización
-  Future<int> updateTransaction(Map<String, dynamic> transaction) async {
+  Future<void> updateTransaction(Map<String, dynamic> transaction) async {
     final db = await _dbHelper.database;
 
     // Preparar los datos para 'transactions' (tabla principal)
@@ -103,30 +103,27 @@ class TransactionService {
       'date': transaction['date'],
       'time': transaction['time'],
       'updated_at': transaction['updated_at'],
+      'type_id': transaction['type_id'],
     };
 
-    // Actualizar en la tabla 'transactions'
-    int rowsAffected = await db.update(
+    // Actualizar el registro principal en la tabla 'transactions'
+    await db.update(
       'transactions',
       transactionData,
       where: 'id = ?',
       whereArgs: [transaction['id']],
     );
 
-    // Comprobar si el tipo de transacción cambió
-    final oldTransaction = await db.query(
-      'transactions',
-      columns: ['type_id'],
-      where: 'id = ?',
-      whereArgs: [transaction['id']],
-    );
+    // Eliminar de la tabla secundaria antigua
+    if (transaction['previous_type_id'] == 1) {
+      await db.delete('incomes', where: 'id = ?', whereArgs: [transaction['id']]);
+    } else if (transaction['previous_type_id'] == 2) {
+      await db.delete('expenses', where: 'id = ?', whereArgs: [transaction['id']]);
+    }
 
-    final int oldTypeId = oldTransaction.isNotEmpty ? oldTransaction.first['type_id'] as int : -1;
-    final int newTypeId = transaction['type_id'];
-
-    // Preparar datos para la tabla 'incomes' o 'expenses'
+    // Insertar o actualizar en la nueva tabla secundaria según el tipo actual
     final subTableData = {
-      'id': transaction['id'], // Asegura consistencia del ID
+      'id': transaction['id'],
       'amount': transaction['amount'],
       'description': transaction['description'],
       'category_id': transaction['category_id'],
@@ -135,24 +132,23 @@ class TransactionService {
       'updated_at': transaction['updated_at'],
     };
 
-    // Si el tipo cambió, eliminar de la tabla anterior
-    if (oldTypeId != newTypeId) {
-      if (oldTypeId == 1) {
-        await db.delete('incomes', where: 'id = ?', whereArgs: [transaction['id']]);
-      } else if (oldTypeId == 2) {
-        await db.delete('expenses', where: 'id = ?', whereArgs: [transaction['id']]);
-      }
+    if (transaction['type_id'] == 1) {
+      // Insertar en 'incomes'
+      await db.insert(
+        'incomes',
+        subTableData,
+        conflictAlgorithm: ConflictAlgorithm.replace, // Reemplaza si ya existe
+      );
+    } else if (transaction['type_id'] == 2) {
+      // Insertar en 'expenses'
+      await db.insert(
+        'expenses',
+        subTableData,
+        conflictAlgorithm: ConflictAlgorithm.replace, // Reemplaza si ya existe
+      );
     }
-
-    // Actualizar o insertar en la tabla nueva
-    if (newTypeId == 1) {
-      await db.insert('incomes', subTableData, conflictAlgorithm: ConflictAlgorithm.replace);
-    } else if (newTypeId == 2) {
-      await db.insert('expenses', subTableData, conflictAlgorithm: ConflictAlgorithm.replace);
-    }
-
-    return rowsAffected;
   }
+
 
 
   // Eliminar transacción con sincronización
