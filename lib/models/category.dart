@@ -28,10 +28,10 @@ class Category {
 
   factory Category.fromMap(Map<String, dynamic> map) {
     return Category(
-      id: map['id'],
-      name: map['name'],
-      type_id: map['type_id'],
-      iconId: map['icon_id'],
+      id: map['id'] as int?,
+      name: map['name'] as String,
+      type_id: map['type_id'] as int,
+      iconId: map['icon_id'] as int?,
       createdAt: DateTime.parse(map['created_at']),
       updatedAt: DateTime.parse(map['updated_at']),
     );

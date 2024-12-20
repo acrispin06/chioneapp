@@ -129,7 +129,19 @@ class TransactionViewModel with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<Object?> getCategoryName(int categoryId) async {
-    return await _transactionService.getCategoryName(categoryId);
+  Future<String> getCategoryName(int categoryId) async {
+    final categoryName = await _transactionService.getCategoryName(categoryId);
+    return categoryName as String;
+  }
+
+  Future<List<Category>> getAvailableCategories() async {
+    try {
+      // Llama al servicio y retorna la lista de categorías.
+      final categories = await _transactionService.getAvailableCategories();
+      return categories;
+    } catch (e) {
+      _setErrorMessage('Failed to load available categories: $e');
+      return [];
+    }
   }
 }

@@ -121,14 +121,16 @@ class DatabaseHelper {
     await db.execute('''
     CREATE TABLE IF NOT EXISTS budgets (
       id INTEGER PRIMARY KEY,
-      user_id INTEGER,
-      category_id INTEGER,
-      amount REAL NOT NULL,
+      user_id INTEGER NOT NULL,
+      category_id INTEGER NOT NULL,
+      amount REAL NOT NULL CHECK (amount > 0),
+      spent REAL DEFAULT 0.0 CHECK (spent >= 0),
       date TEXT NOT NULL,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users(id),
-      FOREIGN KEY (category_id) REFERENCES categories(id)
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+      UNIQUE (user_id, category_id)
     );
     ''');
 
@@ -287,14 +289,7 @@ class DatabaseHelper {
     //goals-categories
     await db.insert('goal_categories', {'goal_id': 1, 'category_id': 1});
     await db.insert('goal_categories', {'goal_id': 2, 'category_id': 2});
-    //budgets
-    await db.insert('budgets', {'user_id': 1, 'category_id': 1, 'amount': 100.0, 'date': '2024-11-29'});
-    await db.insert('budgets', {'user_id': 1, 'category_id': 2, 'amount': 50.0, 'date': '2024-11-29'});
-    await db.insert('budgets', {'user_id': 1, 'category_id': 3, 'amount': 200.0, 'date': '2024-11-29'});
-    await db.insert('budgets', {'user_id': 1, 'category_id': 4, 'amount': 150.0, 'date': '2024-11-29'});
-    await db.insert('budgets', {'user_id': 1, 'category_id': 5, 'amount': 100.0, 'date': '2024-11-29'});
-    await db.insert('budgets', {'user_id': 1, 'category_id': 6, 'amount': 50.0, 'date': '2024-11-29'});
-    await db.insert('budgets', {'user_id': 1, 'category_id': 7, 'amount': 50.0, 'date': '2024-11-29'});
+
     //goals
     await db.insert('goals', {'user_id': 1, 'name': 'Buy a new car', 'amount': 10000.0, 'targetDate': '2022-12-31'});
     await db.insert('goals', {'user_id': 1, 'name': 'Buy a new house', 'amount': 50000.0, 'targetDate': '2025-12-31'});

@@ -3,6 +3,7 @@ class Budget {
   int userId;
   int categoryId;
   double amount;
+  double spent;
   DateTime date;
   DateTime createdAt;
   DateTime updatedAt;
@@ -12,10 +13,13 @@ class Budget {
     required this.userId,
     required this.categoryId,
     required this.amount,
+    this.spent = 0.0,
     required this.date,
     required this.createdAt,
     required this.updatedAt,
   });
+
+  double get remainingAmount => amount - spent;
 
   Map<String, dynamic> toMap() {
     return {
@@ -23,6 +27,7 @@ class Budget {
       'user_id': userId,
       'category_id': categoryId,
       'amount': amount,
+      'spent': spent,
       'date': date.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
@@ -35,6 +40,7 @@ class Budget {
       userId: map['user_id'],
       categoryId: map['category_id'],
       amount: (map['amount'] as num).toDouble(),
+      spent: (map['spent'] as num).toDouble(),
       date: DateTime.parse(map['date']),
       createdAt: DateTime.parse(map['created_at']),
       updatedAt: DateTime.parse(map['updated_at']),

@@ -1,3 +1,5 @@
+import 'package:chioneapp/models/category.dart';
+
 import '../db/database_helper.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -218,5 +220,9 @@ class TransactionService {
     return result.isNotEmpty ? result.first['name'] : 'Unknown';
   }
 
-
+  Future<List<Category>> getAvailableCategories() async {
+    final db = await _dbHelper.database;
+    final result = await db.query('categories');
+    return result.map((map) => Category.fromMap(map)).toList();
+  }
 }
