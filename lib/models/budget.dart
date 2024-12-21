@@ -1,25 +1,45 @@
 class Budget {
-  int? id;
-  int userId;
-  int categoryId;
-  double amount;
-  double spent;
-  DateTime date;
-  DateTime createdAt;
-  DateTime updatedAt;
+  final int? id;
+  final int userId;
+  final int categoryId;
+  final double amount;
+  final double spent;
+  final DateTime date;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   Budget({
     this.id,
     required this.userId,
     required this.categoryId,
     required this.amount,
-    this.spent = 0.0,
+    required this.spent,
     required this.date,
     required this.createdAt,
     required this.updatedAt,
   });
 
-  double get remainingAmount => amount - spent;
+  Budget copyWith({
+    int? id,
+    int? userId,
+    int? categoryId,
+    double? amount,
+    double? spent,
+    DateTime? date,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return Budget(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      categoryId: categoryId ?? this.categoryId,
+      amount: amount ?? this.amount,
+      spent: spent ?? this.spent,
+      date: date ?? this.date,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {
