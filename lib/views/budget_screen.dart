@@ -1,8 +1,10 @@
+import 'package:chioneapp/models/category.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/budget.dart';
 import '../viewmodels/budget_view_model.dart';
 import '../viewmodels/transaction_view_model.dart';
+import 'budget_detail_screen.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -239,97 +241,107 @@ class _BudgetScreenState extends State<BudgetScreen> {
     );
   }
 
-  void _showAddBudgetDialog(BuildContext context) {
+  void _showAddBudgetDialog(BuildContext context) async {
     final _formKey = GlobalKey<FormState>();
     final _amountController = TextEditingController();
     int? selectedCategory;
 
-    context.read<TransactionViewModel>().getAvailableCategories().then((availableCategories) {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return Dialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    "Add New Budget",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          controller: _amountController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: "Amount"),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return "Please enter an amount";
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        DropdownButtonFormField<int>(
-                          value: selectedCategory,
-                          items: availableCategories
-                              .map((category) => DropdownMenuItem<int>(
-                            value: category.id,
-                            child: Text(category.name),
-                          ))
-                              .toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              selectedCategory = value;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null) {
-                              return "Please select a category";
-                            }
-                            return null;
-                          },
-                          decoration: const InputDecoration(
-                            labelText: "Category",
-                            border: OutlineInputBorder(),
-                          ),
-                        )
+    // Espera a que las categorías disponibles se carguen
+    final availableCategories = await context.read<TransactionViewModel>().getAvailableCategories();
 
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+    if (availableCategories.isEmpty) {
+      // Si no hay categorías disponibles, muestra un mensaje
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("No categories available to create a budget.")),
+      );
+      return;
+    }
+
+    // Muestra el diálogo una vez que las categorías estén disponibles
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "Add New Budget",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                Form(
+                  key: _formKey,
+                  child: Column(
                     children: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text("Cancel"),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            final amount = double.parse(_amountController.text);
-                            context.read<BudgetViewModel>().addBudget(1, selectedCategory!, amount);
-                            Navigator.of(context).pop();
+                      TextFormField(
+                        controller: _amountController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: "Amount"),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return "Please enter an amount";
                           }
+                          if (double.tryParse(value) == null || double.parse(value) <= 0) {
+                            return "Please enter a valid amount greater than 0";
+                          }
+                          return null;
                         },
-                        child: const Text("Add"),
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<int>(
+                        value: selectedCategory,
+                        items: availableCategories
+                            .map((category) => DropdownMenuItem<int>(
+                          value: (category as Category).id,
+                          child: Text(category.name),
+                        ))
+                            .toList(),
+                        onChanged: (value) {
+                          selectedCategory = value;
+                        },
+                        validator: (value) {
+                          if (value == null) {
+                            return "Please select a category";
+                          }
+                          return null;
+                        },
+                        decoration: const InputDecoration(
+                          labelText: "Category",
+                          border: OutlineInputBorder(),
+                        ),
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text("Cancel"),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          final amount = double.parse(_amountController.text);
+                          context.read<BudgetViewModel>().addBudget(1, selectedCategory!, amount);
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      child: const Text("Add"),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          );
-        },
-      );
-    });
+          ),
+        );
+      },
+    );
   }
 }
