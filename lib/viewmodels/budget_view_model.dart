@@ -141,6 +141,20 @@ class BudgetViewModel with ChangeNotifier {
     }
   }
 
+  Future<String> getCategoryName(int categoryId) async {
+    try {
+      return await _budgetService.getCategoryName(categoryId);
+    } catch (e) {
+      _setErrorMessage('Error fetching category name: $e');
+      return 'Unknown';
+    }
+  }
+
+  void _setErrorMessage(String message) {
+    _errorMessage = message;
+    notifyListeners();
+  }
+
   /// Manejo del estado de carga
   void _setLoading(bool value) {
     _isLoading = value;
