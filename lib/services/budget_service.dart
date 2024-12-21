@@ -152,4 +152,10 @@ class BudgetService {
 
     return result;
   }
+
+  Future<String> getCategoryName(int categoryId) async {
+    final db = await _dbHelper.database;
+    final result = await db.query('categories', where: 'id = ?', whereArgs: [categoryId]);
+    return result.isNotEmpty ? result.first['name'] as String : 'Unknown';
+  }
 }
