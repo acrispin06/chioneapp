@@ -134,7 +134,7 @@ class TransactionViewModel with ChangeNotifier {
     return categoryName as String;
   }
 
-  Future<List<Category>> getAvailableCategories() async {
+  Future<List<Object>> getAvailableCategories() async {
     try {
       // Llama al servicio y retorna la lista de categorías.
       final categories = await _transactionService.getAvailableCategories();
