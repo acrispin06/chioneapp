@@ -4,10 +4,27 @@ import '../models/budget.dart';
 import '../viewmodels/budget_view_model.dart';
 import '../viewmodels/transaction_view_model.dart';
 
-class BudgetDetailScreen extends StatelessWidget {
+class BudgetDetailScreen extends StatefulWidget {
   final Budget budget;
 
   const BudgetDetailScreen({Key? key, required this.budget}) : super(key: key);
+
+  @override
+  State<BudgetDetailScreen> createState() => _BudgetDetailScreenState();
+}
+
+class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final viewModel = context.read<BudgetViewModel>();
+    await viewModel.loadCategoryTransactions(widget.budget.categoryId);
+    await viewModel.updateBudgetProgress(widget.budget);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +35,7 @@ class BudgetDetailScreen extends StatelessWidget {
         elevation: 0,
         backgroundColor: primaryColor,
         title: FutureBuilder<String>(
-          future: context.read<BudgetViewModel>().getCategoryName(budget.categoryId),
+          future: context.read<BudgetViewModel>().getCategoryName(widget.budget.categoryId),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Text("Loading...");
@@ -43,12 +60,22 @@ class BudgetDetailScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildBudgetSummary(context),
-          const Divider(),
-          _buildTransactionList(context),
-        ],
+      body: Consumer<BudgetViewModel>(
+        builder: (context, viewModel, _) {
+          if (viewModel.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return Column(
+            children: [
+              _buildBudgetSummary(context),
+              const Divider(),
+              Expanded(
+                child: _buildTransactionList(viewModel.categoryTransactions),
+              ),
+            ],
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _editBudget(context),
@@ -59,7 +86,7 @@ class BudgetDetailScreen extends StatelessWidget {
   }
 
   Widget _buildBudgetSummary(BuildContext context) {
-    final double remaining = budget.amount - budget.spent;
+    final double remaining = widget.budget.amount - widget.budget.spent;
 
     return Card(
       margin: const EdgeInsets.all(16),
@@ -69,9 +96,9 @@ class BudgetDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSummaryTile("Total Budget", budget.amount, Colors.blue),
+            _buildSummaryTile("Total Budget", widget.budget.amount, Colors.blue),
             const SizedBox(height: 8),
-            _buildSummaryTile("Total Spent", budget.spent, Colors.red),
+            _buildSummaryTile("Total Spent", widget.budget.spent, Colors.red),
             const SizedBox(height: 8),
             _buildSummaryTile("Remaining", remaining, Colors.green),
           ],
@@ -103,54 +130,56 @@ class BudgetDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTransactionList(BuildContext context) {
-    return Expanded(
-      child: Consumer<TransactionViewModel>(
-        builder: (context, transactionViewModel, _) {
-          if (transactionViewModel.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+  Widget _buildTransactionList(List<Map<String, dynamic>> transactions) {
+    if (transactions.isEmpty) {
+      return const Center(
+        child: Text(
+          "No transactions for this category",
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+      );
+    }
 
-          final transactions = transactionViewModel.transactions
-              .where((t) => t['budget_id'] == budget.id)
-              .toList();
+    return ListView.builder(
+      itemCount: transactions.length,
+      padding: const EdgeInsets.all(16),
+      itemBuilder: (context, index) {
+        final transaction = transactions[index];
+        final isExpense = transaction['type_id'] == 2;
 
-          if (transactions.isEmpty) {
-            return const Center(
-              child: Text(
-                "No transactions associated with this budget",
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+        return Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: (isExpense ? Colors.red : Colors.green).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
-            );
-          }
-
-          return ListView.builder(
-            itemCount: transactions.length,
-            padding: const EdgeInsets.all(16),
-            itemBuilder: (context, index) {
-              final transaction = transactions[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                child: ListTile(
-                  leading: Icon(
-                    Icons.monetization_on,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  title: Text(transaction['description'] ?? "No description"),
-                  subtitle: Text("Amount: S/ ${transaction['amount'].toStringAsFixed(2)}"),
-                  trailing: Text(transaction['date']),
-                ),
-              );
-            },
-          );
-        },
-      ),
+              child: Image.asset(
+                transaction['icon_path'],
+                width: 24,
+                height: 24,
+              ),
+            ),
+            title: Text(transaction['description']),
+            subtitle: Text("${transaction['date']?.toString().split('T')[0] ?? 'N/A'} - ${transaction['time']}"),
+            trailing: Text(
+              "S/ ${transaction['amount'].toStringAsFixed(2)}",
+              style: TextStyle(
+                color: isExpense ? Colors.red : Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
   void _editBudget(BuildContext context) {
     final _formKey = GlobalKey<FormState>();
-    final _amountController = TextEditingController(text: budget.amount.toStringAsFixed(2));
+    final _amountController = TextEditingController(text: widget.budget.amount.toStringAsFixed(2));
 
     showDialog(
       context: context,
@@ -193,7 +222,7 @@ class BudgetDetailScreen extends StatelessWidget {
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
                           final newAmount = double.parse(_amountController.text);
-                          final updatedBudget = budget.copyWith(amount: newAmount);
+                          final updatedBudget = widget.budget.copyWith(amount: newAmount);
                           context.read<BudgetViewModel>().updateBudget(updatedBudget);
                           Navigator.of(context).pop();
                         }
@@ -224,7 +253,7 @@ class BudgetDetailScreen extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () {
-                context.read<BudgetViewModel>().deleteBudget(budget.id!, budget.userId);
+                context.read<BudgetViewModel>().deleteBudget(widget.budget.id!, widget.budget.userId);
                 Navigator.of(context).pop();
                 Navigator.of(context).pop();
               },

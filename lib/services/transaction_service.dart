@@ -225,4 +225,67 @@ class TransactionService {
     final result = await db.query('categories');
     return result.map((map) => Category.fromMap(map)).toList();
   }
+
+  // Nuevo método para obtener transacciones por categoría
+  Future<List<Map<String, dynamic>>> getTransactionsByCategory(int categoryId) async {
+    final db = await _dbHelper.database;
+    return await db.rawQuery('''
+      SELECT 
+        t.id,
+        t.amount,
+        t.date,
+        t.time,
+        t.description,
+        t.category_id,
+        c.name AS category_name,
+        COALESCE(i.icon_path, 'assets/icons/default.png') AS icon_path,
+        tt.type_name AS type_name,
+        COALESCE(t.icon_id, 1) AS icon_id,
+        t.type_id
+      FROM transactions t
+      JOIN categories c ON t.category_id = c.id
+      JOIN icons i ON t.icon_id = i.icon_id
+      JOIN transaction_types tt ON t.type_id = tt.type_id
+      WHERE t.category_id = ?
+      ORDER BY t.date DESC
+    ''', [categoryId]);
+  }
+
+  // Nuevo método para calcular el total gastado por categoría
+  Future<double> calculateTotalSpentByCategory(int categoryId) async {
+    final db = await _dbHelper.database;
+    final result = await db.rawQuery('''
+      SELECT SUM(amount) as total
+      FROM transactions
+      WHERE category_id = ? AND type_id = 2
+    ''', [categoryId]);
+
+    return (result.first['total'] as num?)?.toDouble() ?? 0.0;
+  }
+
+  // Actualizar el budget cuando se agrega una nueva transacción
+  Future<void> updateBudgetSpentAmount(int categoryId, double amount) async {
+    final db = await _dbHelper.database;
+
+    // Obtener el budget actual para la categoría
+    final budgets = await db.query(
+      'budgets',
+      where: 'category_id = ?',
+      whereArgs: [categoryId],
+    );
+
+    if (budgets.isNotEmpty) {
+      final budget = budgets.first;
+      final currentSpent = (budget['spent'] as num).toDouble();
+      final updatedSpent = currentSpent + amount;
+
+      // Actualizar el spent del budget
+      await db.update(
+        'budgets',
+        {'spent': updatedSpent},
+        where: 'category_id = ?',
+        whereArgs: [categoryId],
+      );
+    }
+  }
 }

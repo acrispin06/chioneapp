@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import '../models/budget.dart';
 import '../services/budget_service.dart';
+import '../services/transaction_service.dart';
 
 class BudgetViewModel with ChangeNotifier {
   final BudgetService _budgetService = BudgetService();
+  final TransactionService _transactionService = TransactionService();
 
   /// Estado interno
   bool _isLoading = false;
@@ -11,6 +13,7 @@ class BudgetViewModel with ChangeNotifier {
   List<Budget> _budgets = [];
   double _totalBudget = 0.0;
   double _totalSpent = 0.0;
+  List<Map<String, dynamic>> _categoryTransactions = [];
 
   /// Getters
   bool get isLoading => _isLoading;
@@ -18,6 +21,7 @@ class BudgetViewModel with ChangeNotifier {
   List<Budget> get budgets => _budgets;
   double get totalBudget => _totalBudget;
   double get totalSpent => _totalSpent;
+  List<Map<String, dynamic>> get categoryTransactions => _categoryTransactions;
 
   /// Cargar presupuestos de un usuario
   Future<void> fetchBudgets(int userId) async {
@@ -147,6 +151,32 @@ class BudgetViewModel with ChangeNotifier {
     } catch (e) {
       _setErrorMessage('Error fetching category name: $e');
       return 'Unknown';
+    }
+  }
+
+  Future<void> loadCategoryTransactions(int categoryId) async {
+    _setLoading(true);
+    try {
+      _categoryTransactions = await _transactionService.getTransactionsByCategory(categoryId);
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'Error loading transactions: ${e.toString()}';
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Actualizar el progreso del presupuesto con las transacciones
+  Future<void> updateBudgetProgress(Budget budget) async {
+    try {
+      final totalSpent = await _transactionService.calculateTotalSpentByCategory(budget.categoryId);
+      if (totalSpent != budget.spent) {
+        final updatedBudget = budget.copyWith(spent: totalSpent);
+        await _budgetService.updateBudget(updatedBudget);
+        await fetchBudgets(budget.userId);
+      }
+    } catch (e) {
+      _errorMessage = 'Error updating budget progress: ${e.toString()}';
     }
   }
 
