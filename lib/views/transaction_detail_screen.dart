@@ -85,10 +85,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Hero(
-              tag: 'transaction_${widget.transactionId}',
-              child: _buildAmountSection(isIncome, amount),
-            ),
+            _buildAmountSection(isIncome, amount),
             const SizedBox(height: 24),
             _buildDetailsCard(),
           ],

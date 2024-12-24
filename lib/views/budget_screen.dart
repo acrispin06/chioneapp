@@ -122,6 +122,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddBudgetDialog(context),
+        heroTag: 'addBudgetButton',
         backgroundColor: primaryColor,
         child: const Icon(Icons.add),
       ),

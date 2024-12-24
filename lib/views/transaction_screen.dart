@@ -362,6 +362,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddTransactionDialog,
+        heroTag: 'addTransactionButton',
         backgroundColor: Theme
             .of(context)
             .colorScheme

@@ -60,7 +60,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Método para construir el título del AppBar
   Widget _buildAppBarTitle() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,9 +85,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Método para construir el botón de notificaciones
   Widget _buildNotificationIcon(BuildContext context) {
-    final hasUnreadNotifications = true; // Cambiar a false si no hay notificaciones
+    final hasUnreadNotifications = true;
 
     return hasUnreadNotifications
         ? IconButton(
@@ -122,8 +120,6 @@ class _HomeScreenState extends State<HomeScreen> {
         : const SizedBox.shrink(); // No muestra nada si no hay notificaciones
   }
 
-
-  // Método para obtener el saludo según la hora del día
   String _getGreeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) {

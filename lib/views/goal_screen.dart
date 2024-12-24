@@ -53,6 +53,7 @@ class _GoalScreenState extends State<GoalScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddGoalDialog,
+        heroTag: 'addGoalButton',
         backgroundColor: Theme.of(context).colorScheme.primary,
         child: const Icon(Icons.add, color: Colors.white),
       ),

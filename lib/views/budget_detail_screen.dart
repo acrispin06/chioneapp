@@ -79,6 +79,7 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _editBudget(context),
+        heroTag: 'editBudgetButton',
         backgroundColor: primaryColor,
         child: const Icon(Icons.edit),
       ),
