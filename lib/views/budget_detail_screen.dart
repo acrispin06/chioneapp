@@ -17,13 +17,12 @@ class _BudgetDetailScreenState extends State<BudgetDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
-  }
 
-  Future<void> _loadData() async {
-    final viewModel = context.read<BudgetViewModel>();
-    await viewModel.loadCategoryTransactions(widget.budget.categoryId);
-    await viewModel.updateBudgetProgress(widget.budget);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final budgetViewModel = Provider.of<BudgetViewModel>(context, listen: false);
+      budgetViewModel.loadCategoryTransactions(widget.budget.categoryId);
+      budgetViewModel.updateBudgetProgress(widget.budget);
+    });
   }
 
   @override
