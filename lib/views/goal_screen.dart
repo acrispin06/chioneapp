@@ -22,21 +22,55 @@ class _GoalScreenState extends State<GoalScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFE8DEF8),
       appBar: AppBar(
-        title: const Text("Goals"),
+        title: const Text(
+          "My Goals",
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF21005D),
+          ),
+        ),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
       body: Consumer<GoalViewModel>(
         builder: (context, goalViewModel, _) {
           if (goalViewModel.isLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF6750A4),
+              ),
+            );
           }
 
           if (goalViewModel.goals.isEmpty) {
-            return const Center(
-              child: Text(
-                "No goals yet. Add one to get started!",
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.flag_outlined,
+                    size: 64,
+                    color: const Color(0xFF6750A4).withOpacity(0.5),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    "Let's start creating goals!",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF21005D),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "Tap the + button to add a new goal",
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ],
               ),
             );
           }
@@ -54,63 +88,135 @@ class _GoalScreenState extends State<GoalScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddGoalDialog,
         heroTag: 'addGoalButton',
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: const Color(0xFF6750A4),
+        child: const Icon(Icons.add, color: Colors.white, size: 28),
       ),
     );
   }
 
   Widget _buildGoalCard(Goal goal) {
     final double progress = (goal.currentAmount / goal.amount).clamp(0, 1);
+    final daysLeft = goal.targetDate.difference(DateTime.now()).inDays;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              goal.name,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Target: S/ ${goal.amount.toStringAsFixed(2)}",
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                Text(
-                  "Saved: S/ ${goal.currentAmount.toStringAsFixed(2)}",
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Colors.grey[200],
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Progress: ${(progress * 100).toStringAsFixed(1)}%",
-              style: TextStyle(
-                fontSize: 14,
-                color: progress >= 1 ? Colors.green : Colors.grey,
-                fontWeight: FontWeight.bold,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color(0xFF6750A4).withOpacity(0.1),
+            width: 1,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      goal.name,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF21005D),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6750A4).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      "$daysLeft days",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF6750A4),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Target Date: ${goal.targetDate.toLocal()}".split(' ')[0],
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Goal",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      Text(
+                        "S/ ${goal.amount.toStringAsFixed(2)}",
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF21005D),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const Text(
+                        "Saved",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      Text(
+                        "S/ ${goal.currentAmount.toStringAsFixed(2)}",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: progress >= 1
+                              ? Colors.green
+                              : const Color(0xFF6750A4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  backgroundColor: const Color(0xFF6750A4).withOpacity(0.1),
+                  color: progress >= 1 ? Colors.green : const Color(0xFF6750A4),
+                  minHeight: 8,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "${(progress * 100).toStringAsFixed(1)}% completed",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: progress >= 1 ? Colors.green : const Color(0xFF6750A4),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -120,42 +226,73 @@ class _GoalScreenState extends State<GoalScreen> {
     final _formKey = GlobalKey<FormState>();
     final _nameController = TextEditingController();
     final _amountController = TextEditingController();
-    DateTime _selectedDate = DateTime.now();
+    DateTime _selectedDate = DateTime.now().add(const Duration(days: 30));
 
     showDialog(
       context: context,
       builder: (context) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  "Add New Goal",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  "Create a New Goal",
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFFFFFF),
+                  ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 Form(
                   key: _formKey,
                   child: Column(
                     children: [
                       TextFormField(
                         controller: _nameController,
-                        decoration: const InputDecoration(labelText: "Goal Name"),
+                        decoration: InputDecoration(
+                          labelText: "Goal Name",
+                          labelStyle: const TextStyle(color: Color(0xFF6750A4)),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFF6750A4)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: const Color(0xFF6750A4).withOpacity(0.5),
+                            ),
+                          ),
+                        ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return "Please enter a goal name";
+                            return "Please enter a valid goal name";
                           }
                           return null;
                         },
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
                       TextFormField(
                         controller: _amountController,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: "Target Amount"),
+                        decoration: InputDecoration(
+                          labelText: "Amount",
+                          prefixText: "S/ ",
+                          labelStyle: const TextStyle(color: Color(0xFF6750A4)),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFF6750A4)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: const Color(0xFF6750A4).withOpacity(0.5),
+                            ),
+                          ),
+                        ),
                         validator: (value) {
                           if (value == null || value.isEmpty || double.tryParse(value) == null) {
                             return "Please enter a valid amount";
@@ -163,41 +300,88 @@ class _GoalScreenState extends State<GoalScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 12),
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text("Target Date: ${_selectedDate.toLocal()}".split(' ')[0]),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.calendar_today),
-                          onPressed: () async {
-                            final date = await showDatePicker(
-                              context: context,
-                              initialDate: _selectedDate,
-                              firstDate: DateTime.now(),
-                              lastDate: DateTime(2100),
-                            );
-                            if (date != null) {
-                              setState(() => _selectedDate = date);
-                            }
-                          },
+                      const SizedBox(height: 16),
+                      InkWell(
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: _selectedDate,
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime(2100),
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  colorScheme: const ColorScheme.light(
+                                    primary: Color(0xFF6750A4),
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (date != null) {
+                            setState(() => _selectedDate = date);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: const Color(0xFF6750A4).withOpacity(0.5),
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.calendar_today,
+                                color: Color(0xFF6750A4),
+                              ),
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "Target Date",
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  Text(
+                                    "${_selectedDate.toLocal()}".split(' ')[0],
+                                    style: const TextStyle(
+                                      color: Color(0xFF21005D),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text("Cancel"),
+                      child: const Text(
+                        "Cancel",
+                        style: TextStyle(color: Colors.grey),
+                      ),
                     ),
+                    const SizedBox(width: 12),
                     ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
                           final newGoal = Goal(
-                            userId: 1, // Hardcoded user ID for now
+                            userId: 1,
                             name: _nameController.text,
                             amount: double.parse(_amountController.text),
                             targetDate: _selectedDate,
@@ -208,7 +392,23 @@ class _GoalScreenState extends State<GoalScreen> {
                           Navigator.of(context).pop();
                         }
                       },
-                      child: const Text("Add"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6750A4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: const Text(
+                        "Save",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
                   ],
                 ),
