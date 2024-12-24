@@ -1,3 +1,5 @@
+import 'package:chioneapp/models/goal.dart';
+import 'package:chioneapp/viewmodels/goal_view_model.dart';
 import 'package:chioneapp/views/transaction_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -18,6 +20,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
   int _selectedTypeId = 1; // 1: Income, 2: Expense
   int? _selectedCategoryId;
+  int? _selectedGoalId;
   int? _selectedIconId; // Auto-selected based on category
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
@@ -53,7 +56,11 @@ class _TransactionScreenState extends State<TransactionScreen> {
   }
 
   Future<void> _showAddTransactionDialog() async {
-    final context = this.context;
+    final transactionViewModel = Provider.of<TransactionViewModel>(context, listen: false);
+    final goalViewModel = Provider.of<GoalViewModel>(context, listen: false);
+    // Fetch available goals
+    await goalViewModel.fetchGoals();
+
     await showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -96,6 +103,10 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
                     // Category Dropdown
                     _buildCategoryDropdown(),
+                    const SizedBox(height: 12),
+
+                    // Goal Dropdown (only for income)
+                    if (_selectedTypeId == 1) _buildGoalDropdown(goalViewModel),
                     const SizedBox(height: 12),
 
                     // Date Picker
@@ -144,6 +155,31 @@ class _TransactionScreenState extends State<TransactionScreen> {
     );
   }
 
+  Widget _buildGoalDropdown(GoalViewModel goalViewModel) {
+    return DropdownButtonFormField<int>(
+      value: _selectedGoalId,
+      decoration: const InputDecoration(
+        labelText: "Goal",
+      ),
+      items: goalViewModel.goals.map((goal) {
+        return DropdownMenuItem<int>(
+          value: (goal as Goal).id,
+          child: Text((goal as Goal).name),
+        );
+      }).toList(),
+      onChanged: (value) {
+        setState(() {
+          _selectedGoalId = value;
+        });
+      },
+      validator: (value) {
+        if (_selectedTypeId == 1 && value == null) {
+          return "Please select a goal for this income.";
+        }
+        return null;
+      },
+    );
+  }
 
   Widget _buildTextField(String label, TextEditingController controller,
       TextInputType type) {
@@ -274,7 +310,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
       };
 
       await Provider.of<TransactionViewModel>(context, listen: false)
-          .addTransaction(transaction);
+          .addTransactionWithGoal(transaction, goalId: _selectedGoalId);
       Navigator.of(context).pop();
       _clearForm();
     }
@@ -288,6 +324,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
       _selectedDate = DateTime.now();
       _selectedTime = TimeOfDay.now();
       _selectedCategoryId = null;
+      _selectedGoalId = null;
       _selectedIconId = null;
     });
   }

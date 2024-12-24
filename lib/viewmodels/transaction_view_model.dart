@@ -69,11 +69,40 @@ class TransactionViewModel with ChangeNotifier {
     }
   }
 
-  Future<void> addTransaction(Map<String, dynamic> transaction) async {
-    await _transactionService.addTransaction(transaction);
-    await fetchAllTransactions();
-    await fetchSummaryData();
+  //fetchGoalTransactions
+  Future<void> fetchGoalTransactions(int goalId) async {
+    _setLoadingState(true);
+    try {
+      _transactions = await _transactionService.getGoalTransactions(goalId);
+      notifyListeners();
+    } catch (e) {
+      _setErrorMessage('Error fetching goal transactions: $e');
+    } finally {
+      _setLoadingState(false);
+    }
   }
+
+  Future<void> addTransactionWithGoal(Map<String, dynamic> transaction, {int? goalId}) async {
+    _setLoadingState(true);
+    try {
+      // Llamar al servicio para añadir la transacción y asociarla a un goal si corresponde
+      await _transactionService.addTransactionWithGoal(transaction, goalId);
+
+      // Refrescar las transacciones y datos del resumen
+      await fetchAllTransactions();
+      await fetchSummaryData();
+
+      if (goalId != null) {
+        // Opcional: Refrescar datos específicos relacionados con metas si están implementados
+        await fetchGoalTransactions(goalId);
+      }
+    } catch (e) {
+      _setErrorMessage('Error adding transaction: $e');
+    } finally {
+      _setLoadingState(false);
+    }
+  }
+
 
   Future<void> updateTransaction(Map<String, dynamic> transaction) async {
     _setLoadingState(true);

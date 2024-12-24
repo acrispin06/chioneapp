@@ -1,5 +1,4 @@
 import 'package:chioneapp/models/category.dart';
-
 import '../db/database_helper.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -55,8 +54,8 @@ class TransactionService {
     return result.isNotEmpty ? result.first : null;
   }
 
-  // Insertar transacción con sincronización
-  Future<int> addTransaction(Map<String, dynamic> transaction) async {
+  // Insertar transacción con sincronización y asociación a una meta
+  Future<int> addTransactionWithGoal(Map<String, dynamic> transaction, int? goalId) async {
     final db = await _dbHelper.database;
 
     // Insertar en transactions
@@ -87,6 +86,41 @@ class TransactionService {
         'created_at': transaction['created_at'],
         'updated_at': transaction['updated_at'],
       });
+    }
+
+    // Asociar a una meta si se especifica un goalId
+    if (goalId != null) {
+      // Obtener el monto total del goal
+      final goal = await db.query(
+        'goals',
+        where: 'id = ?',
+        whereArgs: [goalId],
+      );
+
+      if (goal.isNotEmpty) {
+        final goalAmount = goal.first['amount'] as double;
+        final transactionAmount = transaction['amount'] as double;
+
+        // Calcular el porcentaje de progreso
+        final progressPercentage = (transactionAmount / goalAmount) * 100;
+
+        // Insertar en goal_transactions
+        await db.insert('goal_transactions', {
+          'goal_id': goalId,
+          'transaction_id': transactionId,
+          'progress_percentage': progressPercentage,
+        });
+
+        // Actualizar el progreso actual en la tabla goals
+        await db.rawUpdate(
+          '''
+        UPDATE goals
+        SET currentAmount = currentAmount + ?
+        WHERE id = ?
+        ''',
+          [transactionAmount, goalId],
+        );
+      }
     }
 
     return transactionId;
@@ -287,5 +321,32 @@ class TransactionService {
         whereArgs: [categoryId],
       );
     }
+  }
+
+  //getGoalTransactions
+  Future<List<Map<String, dynamic>>> getGoalTransactions(int goalId) async {
+    final db = await _dbHelper.database;
+    return await db.rawQuery('''
+      SELECT 
+        t.id,
+        t.amount,
+        t.date,
+        t.time,
+        t.description,
+        t.category_id,
+        c.name AS category_name,
+        COALESCE(i.icon_path, 'assets/icons/default.png') AS icon_path,
+        tt.type_name AS type_name,
+        COALESCE(t.icon_id, 1) AS icon_id,
+        t.type_id,
+        gt.progress_percentage
+      FROM transactions t
+      JOIN categories c ON t.category_id = c.id
+      JOIN icons i ON t.icon_id = i.icon_id
+      JOIN transaction_types tt ON t.type_id = tt.type_id
+      JOIN goal_transactions gt ON t.id = gt.transaction_id
+      WHERE gt.goal_id = ?
+      ORDER BY t.date DESC
+    ''', [goalId]);
   }
 }
