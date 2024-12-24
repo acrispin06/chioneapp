@@ -18,24 +18,23 @@ class _BudgetScreenState extends State<BudgetScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final budgetViewModel = context.read<BudgetViewModel>();
-      budgetViewModel.fetchBudgets(1); // Fetch budgets for the userId
+      context.read<BudgetViewModel>().fetchBudgets(1);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final Color primaryColor = Theme.of(context).colorScheme.primary;
-
     return Scaffold(
+      backgroundColor: const Color(0xFFE8DEF8),
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: primaryColor,
+        backgroundColor: Colors.transparent,
         title: const Text(
           "Budgets",
           style: TextStyle(
-            color: Colors.white,
+            fontSize: 24,
             fontWeight: FontWeight.bold,
+            color: Color(0xFF21005D),
           ),
         ),
         centerTitle: true,
@@ -43,7 +42,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
       body: Consumer<BudgetViewModel>(
         builder: (context, budgetViewModel, _) {
           if (budgetViewModel.isLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(color: Color(0xFF6750A4)),
+            );
           }
 
           final budgets = budgetViewModel.budgets;
@@ -55,11 +56,18 @@ class _BudgetScreenState extends State<BudgetScreen> {
             ]).then((values) => values[0] - values[1]),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF6750A4)),
+                );
               }
 
               if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
+                return Center(
+                  child: Text(
+                    'Error: ${snapshot.error}',
+                    style: const TextStyle(color: Color(0xFF21005D)),
+                  ),
+                );
               }
 
               final totalAvailable = snapshot.data ?? 0.0;
@@ -67,16 +75,36 @@ class _BudgetScreenState extends State<BudgetScreen> {
               return Column(
                 children: [
                   _buildSummarySection(
-                    snapshot.data ?? 0.0, // totalAvailable
+                    snapshot.data ?? 0.0,
                     budgetViewModel.totalSpent,
                     budgetViewModel.totalBudget,
                   ),
                   Expanded(
                     child: budgets.isEmpty
-                        ? const Center(
-                      child: Text(
-                        "No budgets available",
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.account_balance_wallet_outlined,
+                            size: 64,
+                            color: const Color(0xFF6750A4).withOpacity(0.5),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            "No budgets available",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF21005D),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            "Add a budget to get started",
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                          ),
+                        ],
                       ),
                     )
                         : ListView.builder(
@@ -85,23 +113,23 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       itemBuilder: (context, index) {
                         final Budget budget = budgets[index];
                         return FutureBuilder<String>(
-                          future: context.read<TransactionViewModel>().getCategoryName(budget.categoryId),
+                          future: context
+                              .read<TransactionViewModel>()
+                              .getCategoryName(budget.categoryId),
                           builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
-                              return const Center(child: CircularProgressIndicator());
-                            }
-
-                            if (snapshot.hasError || snapshot.data == null) {
-                              return _buildBudgetCard(
-                                context,
-                                budget,
-                                "Category not found",
-                                0.0,
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                child: CircularProgressIndicator(
+                                  color: Color(0xFF6750A4),
+                                ),
                               );
                             }
 
-                            final categoryName = snapshot.data!;
-                            final double progress = (budget.spent / budget.amount).clamp(0, 1);
+                            final categoryName =
+                                snapshot.data ?? "Category not found";
+                            final double progress =
+                            (budget.spent / budget.amount).clamp(0, 1);
 
                             return _buildBudgetCard(
                               context,
@@ -123,56 +151,108 @@ class _BudgetScreenState extends State<BudgetScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddBudgetDialog(context),
         heroTag: 'addBudgetButton',
-        backgroundColor: primaryColor,
-        child: const Icon(Icons.add),
+        backgroundColor: const Color(0xFF6750A4),
+        child: const Icon(Icons.add, size: 28, color: Colors.white),
       ),
     );
   }
 
-  Widget _buildSummarySection(double totalBudget, double totalSpent, double totalAvailable) {
+  Widget _buildSummarySection(
+      double totalAvailable, double totalSpent, double totalBudget) {
     return Card(
       margin: const EdgeInsets.all(16),
+      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color(0xFF6750A4).withOpacity(0.1),
+            width: 1,
+          ),
+        ),
         child: Column(
           children: [
-            _buildSummaryTile("Total Budgeted", totalBudget, Colors.blue),
-            const SizedBox(height: 8),
-            _buildSummaryTile("Total Spent", totalSpent, Colors.red),
-            const SizedBox(height: 8),
-            _buildSummaryTile("Total Available", totalAvailable, Colors.green),
+            _buildSummaryTile(
+              "Total Budget",
+              totalBudget,
+              const Color(0xFF6750A4),
+              Icons.account_balance_wallet,
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Divider(height: 1),
+            ),
+            _buildSummaryTile(
+              "Spent",
+              totalSpent,
+              const Color(0xFFB3261E),
+              Icons.trending_down,
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Divider(height: 1),
+            ),
+            _buildSummaryTile(
+              "Available",
+              totalAvailable,
+              const Color(0xFF1B873B),
+              Icons.savings,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSummaryTile(String title, double amount, Color color) {
+
+  Widget _buildSummaryTile(
+      String title, double amount, Color color, IconData icon) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
           ),
+          child: Icon(icon, color: color, size: 24),
         ),
-        Text(
-          "S/ ${amount.toStringAsFixed(2)}",
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: color,
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+              ),
+              Text(
+                "S/ ${amount.toStringAsFixed(2)}",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  Widget _buildBudgetCard(BuildContext context, Budget budget, String categoryName, double progress) {
+  Widget _buildBudgetCard(
+      BuildContext context, Budget budget, String categoryName, double progress) {
+    final remainingAmount = budget.amount - budget.spent;
+    final isOverBudget = remainingAmount < 0;
+
     return Card(
+      margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
@@ -185,16 +265,30 @@ class _BudgetScreenState extends State<BudgetScreen> {
           );
         },
         borderRadius: BorderRadius.circular(16),
-        child: Padding(
+        child: Container(
           padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: const Color(0xFF6750A4).withOpacity(0.1),
+              width: 1,
+            ),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  CircleAvatar(
-                    backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    child: const Icon(Icons.attach_money, color: Colors.green),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6750A4).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.account_balance_wallet,
+                      color: Color(0xFF6750A4),
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -206,34 +300,76 @@ class _BudgetScreenState extends State<BudgetScreen> {
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
+                            color: Color(0xFF21005D),
                           ),
                         ),
                         Text(
-                          "Budget: S/ ${budget.amount.toStringAsFixed(2)}",
-                          style: TextStyle(
+                          "Budgeted: S/ ${budget.amount.toStringAsFixed(2)}",
+                          style: const TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: Colors.grey,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
+                  Container(
+                    padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: (isOverBudget
+                          ? const Color(0xFFB3261E)
+                          : const Color(0xFF1B873B))
+                          .withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      "${(progress * 100).toStringAsFixed(1)}%",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: isOverBudget
+                            ? const Color(0xFFB3261E)
+                            : const Color(0xFF1B873B),
+                      ),
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 8),
-              LinearProgressIndicator(
-                value: progress,
-                backgroundColor: Colors.grey[200],
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "Remaining: S/ ${(budget.amount - budget.spent).toStringAsFixed(2)}",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  backgroundColor: const Color(0xFF6750A4).withOpacity(0.1),
+                  color: isOverBudget
+                      ? const Color(0xFFB3261E)
+                      : const Color(0xFF6750A4),
+                  minHeight: 8,
                 ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Spent: S/ ${budget.spent.toStringAsFixed(2)}",
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  Text(
+                    "${isOverBudget ? 'Exceeded: ' : 'Available: '}S/ ${remainingAmount.abs().toStringAsFixed(2)}",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: isOverBudget
+                          ? const Color(0xFFB3261E)
+                          : const Color(0xFF1B873B),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -249,11 +385,14 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
     // Espera a que las categorías disponibles se carguen
     final availableCategories = await context.read<TransactionViewModel>().getAvailableCategories();
-
+    final expenseCategories = availableCategories.where((category) => (category as Category).type_id == 1).toList();
     if (availableCategories.isEmpty) {
       // Si no hay categorías disponibles, muestra un mensaje
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("No categories available to create a budget.")),
+        const SnackBar(
+          content: Text("No categories available. Please add a category first."),
+          backgroundColor: Color(0xFF6750A4),
+        ),
       );
       return;
     }
@@ -263,17 +402,17 @@ class _BudgetScreenState extends State<BudgetScreen> {
       context: context,
       builder: (context) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
                   "Add New Budget",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,color: Color(0xFF21005D)),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 Form(
                   key: _formKey,
                   child: Column(
@@ -281,7 +420,21 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       TextFormField(
                         controller: _amountController,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: "Amount"),
+                        decoration: InputDecoration(labelText: "Amount",prefixText: "S/",
+                          labelStyle:
+                          const TextStyle(color: Color(0xFF6750A4)),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide:
+                            const BorderSide(color: Color(0xFF6750A4)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                            color: const Color(0xFF6750A4).withOpacity(0.5),
+                          ),
+                          ),
+                        ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return "Please enter an amount";
