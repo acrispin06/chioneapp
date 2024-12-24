@@ -161,6 +161,11 @@ class DatabaseHelper {
     ''');
 
     await db.execute('''
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_goal_transaction
+    ON goal_transactions (goal_id, transaction_id);
+    ''');
+
+    await db.execute('''
     CREATE TABLE IF NOT EXISTS user_category_preferences (
       id INTEGER PRIMARY KEY,
       user_id INTEGER,
@@ -286,6 +291,7 @@ class DatabaseHelper {
     await db.insert('categories', {'name': 'Investment', 'type_id': 1, 'icon_id': 1});
     await db.insert('categories', {'name': 'Savings', 'type_id': 1, 'icon_id': 1});
     await db.insert('categories', {'name': 'Others', 'type_id': 1, 'icon_id': 1});
+/*
     //goals-categories
     await db.insert('goal_categories', {'goal_id': 1, 'category_id': 1});
     await db.insert('goal_categories', {'goal_id': 2, 'category_id': 2});
@@ -293,10 +299,13 @@ class DatabaseHelper {
     //goals
     await db.insert('goals', {'user_id': 1, 'name': 'Buy a new car', 'amount': 10000.0, 'targetDate': '2022-12-31'});
     await db.insert('goals', {'user_id': 1, 'name': 'Buy a new house', 'amount': 50000.0, 'targetDate': '2025-12-31'});
+
     //goals_transactions
     await db.insert('goal_transactions', {'goal_id': 1, 'transaction_id': 1, 'progress_percentage': 10.0});
     await db.insert('goal_transactions', {'goal_id': 1, 'transaction_id': 2, 'progress_percentage': 20.0});
     await db.insert('goal_transactions', {'goal_id': 1, 'transaction_id': 3, 'progress_percentage': 30.0});
+
+ */
     //notification_types
     await db.insert('notification_types', {'name': 'alert'});
     await db.insert('notification_types', {'name': 'info'});

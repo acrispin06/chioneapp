@@ -3,9 +3,9 @@ import '../db/database_helper.dart';
 class GoalService {
   final DatabaseHelper _dbHelper = DatabaseHelper();
 
-  Future<List<Map<String, dynamic>>> getGoalsByUser(int userId) async {
+  Future<List<Map<String, dynamic>>> getAllGoals() async {
     final db = await _dbHelper.database;
-    return await db.query('goals', where: 'user_id = ?', whereArgs: [userId]);
+    return await db.query('goals');
   }
 
   Future<Object> calculateProgress(int goalId) async {
