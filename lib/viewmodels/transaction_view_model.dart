@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../services/transaction_service.dart';
+import 'goal_view_model.dart';
 
 class TransactionViewModel with ChangeNotifier {
   final TransactionService _transactionService = TransactionService();
@@ -82,19 +83,18 @@ class TransactionViewModel with ChangeNotifier {
     }
   }
 
-  Future<void> addTransactionWithGoal(Map<String, dynamic> transaction, {int? goalId}) async {
+  Future<void> addTransactionWithGoal(Map<String, dynamic> transaction, GoalViewModel goalViewModel, {int? goalId}) async {
     _setLoadingState(true);
     try {
-      // Llamar al servicio para añadir la transacción y asociarla a un goal si corresponde
       await _transactionService.addTransactionWithGoal(transaction, goalId);
 
-      // Refrescar las transacciones y datos del resumen
+      // Update transactions and goals
       await fetchAllTransactions();
       await fetchSummaryData();
 
       if (goalId != null) {
-        // Opcional: Refrescar datos específicos relacionados con metas si están implementados
         await fetchGoalTransactions(goalId);
+        goalViewModel.handleTransactionChange(goalId);
       }
     } catch (e) {
       _setErrorMessage('Error adding transaction: $e');
@@ -117,7 +117,10 @@ class TransactionViewModel with ChangeNotifier {
       // Refrescar los datos después de la actualización
       await fetchAllTransactions();
       await fetchSummaryData();
-
+      if (transaction['goal_id'] != null) {
+        await fetchGoalTransactions(transaction['goal_id']);
+      }
+      await GoalViewModel().syncGoalProgress(transaction['goal_id']);
       notifyListeners();
     } catch (e) {
       _setErrorMessage('Error updating transaction: $e');
@@ -132,6 +135,7 @@ class TransactionViewModel with ChangeNotifier {
     await _transactionService.deleteTransaction(id, typeId);
     await fetchAllTransactions();
     await fetchSummaryData();
+    await GoalViewModel().syncGoalProgress(0);
     notifyListeners();
   }
 

@@ -296,6 +296,9 @@ class _TransactionScreenState extends State<TransactionScreen> {
   }
 
   Future<void> _addTransaction() async {
+    final transactionViewModel = context.read<TransactionViewModel>();
+    final goalViewModel = context.read<GoalViewModel>();
+
     if (_formKey.currentState!.validate() && _selectedCategoryId != null) {
       final transaction = {
         'amount': double.parse(_amountController.text),
@@ -309,8 +312,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
         'updated_at': DateTime.now().toIso8601String(),
       };
 
-      await Provider.of<TransactionViewModel>(context, listen: false)
-          .addTransactionWithGoal(transaction, goalId: _selectedGoalId);
+      await Provider.of<TransactionViewModel>(context, listen: false).addTransactionWithGoal(transaction, goalViewModel, goalId: _selectedGoalId);
       Navigator.of(context).pop();
       _clearForm();
     }

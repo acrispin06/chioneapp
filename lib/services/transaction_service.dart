@@ -130,6 +130,19 @@ class TransactionService {
   Future<void> updateTransaction(Map<String, dynamic> transaction) async {
     final db = await _dbHelper.database;
 
+    // Obtener la transacción anterior
+    final oldTransaction = await db.query(
+      'transactions',
+      where: 'id = ?',
+      whereArgs: [transaction['id']],
+    );
+
+    if (oldTransaction.isEmpty) return;
+
+    final oldAmount = oldTransaction.first['amount'] as double;
+    final oldCategoryId = oldTransaction.first['category_id'] as int;
+    final oldTypeId = oldTransaction.first['type_id'] as int;
+
     // Preparar los datos para 'transactions' (tabla principal)
     final transactionData = {
       'amount': transaction['amount'],
@@ -183,6 +196,13 @@ class TransactionService {
         conflictAlgorithm: ConflictAlgorithm.replace, // Reemplaza si ya existe
       );
     }
+    await updateBudgetSpentAmount(oldCategoryId, oldTypeId == 1 ? oldAmount : -oldAmount);
+    await updateBudgetSpentAmount(transaction['category_id'], transaction['type_id'] == 1 ? -transaction['amount'] : transaction['amount']);
+
+    // Actualizar la asociación con metas
+    await db.update('goal_transactions', {
+      'progress_percentage': ((transaction['amount'] as double )/ oldAmount) * 100,
+    }, where: 'transaction_id = ?', whereArgs: [transaction['id']]);
   }
 
 
@@ -191,16 +211,39 @@ class TransactionService {
   Future<void> deleteTransaction(int id, int typeId) async {
     final db = await _dbHelper.database;
 
+    // Obtener la transacción antes de eliminar
+    final transaction = await db.query('transactions', where: 'id = ?', whereArgs: [id]);
+
+    if (transaction.isEmpty) return;
+
+    final amount = transaction.first['amount'] as double;
+    final categoryId = transaction.first['category_id'] as int;
+
     // Eliminar de transactions
     await db.delete('transactions', where: 'id = ?', whereArgs: [id]);
 
-    // Eliminar de incomes o expenses
-    if (typeId == 1) {
-      await db.delete('incomes', where: 'id = ?', whereArgs: [id]);
-    } else if (typeId == 2) {
-      await db.delete('expenses', where: 'id = ?', whereArgs: [id]);
-    }
+    // Eliminar de la tabla secundaria
+    final subTable = typeId == 1 ? 'incomes' : 'expenses';
+    await db.delete(subTable, where: 'id = ?', whereArgs: [id]);
+
+    // Actualizar presupuesto
+    await updateBudgetSpentAmount(categoryId, typeId == 1 ? amount : -amount);
+
+    // Eliminar asociación con metas
+    await db.delete('goal_transactions', where: 'transaction_id = ?', whereArgs: [id]);
+
+    //actualizar el progreso de la meta
+    await db.rawUpdate('''
+      UPDATE goals
+      SET currentAmount = currentAmount - ?
+      WHERE id IN (
+        SELECT goal_id
+        FROM goal_transactions
+        WHERE transaction_id = ?
+      )
+    ''', [amount, id]);
   }
+
 
   // Calcular el total de transacciones por tipo
   Future<double> calculateTotalByType(int typeId) async {
@@ -217,8 +260,6 @@ class TransactionService {
     }
     return 0.0;
   }
-
-
 
   //calculateGoal
   Future<Object> calculateGoal() async {
@@ -340,6 +381,32 @@ class TransactionService {
         COALESCE(t.icon_id, 1) AS icon_id,
         t.type_id,
         gt.progress_percentage
+      FROM transactions t
+      JOIN categories c ON t.category_id = c.id
+      JOIN icons i ON t.icon_id = i.icon_id
+      JOIN transaction_types tt ON t.type_id = tt.type_id
+      JOIN goal_transactions gt ON t.id = gt.transaction_id
+      WHERE gt.goal_id = ?
+      ORDER BY t.date DESC
+    ''', [goalId]);
+  }
+
+  //getTransactionsByGoal
+  Future<List<Map<String, dynamic>>> getTransactionsByGoal(int goalId) async {
+    final db = await _dbHelper.database;
+    return await db.rawQuery('''
+      SELECT 
+        t.id,
+        t.amount,
+        t.date,
+        t.time,
+        t.description,
+        t.category_id,
+        c.name AS category_name,
+        COALESCE(i.icon_path, 'assets/icons/default.png') AS icon_path,
+        tt.type_name AS type_name,
+        COALESCE(t.icon_id, 1) AS icon_id,
+        t.type_id
       FROM transactions t
       JOIN categories c ON t.category_id = c.id
       JOIN icons i ON t.icon_id = i.icon_id

@@ -14,7 +14,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final dbHelper = DatabaseHelper();
   await dbHelper.database;
-  //await dbHelper.createExampleData();
+  await dbHelper.createExampleData();
   runApp(ChiOneApp());
 }
 

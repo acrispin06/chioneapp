@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chioneapp/models/goal.dart';
 import '../viewmodels/goal_view_model.dart';
+import '../viewmodels/transaction_view_model.dart';
+import 'goal_detail_screen.dart';
 
 class GoalScreen extends StatefulWidget {
   const GoalScreen({Key? key}) : super(key: key);
@@ -80,7 +82,17 @@ class _GoalScreenState extends State<GoalScreen> {
             padding: const EdgeInsets.all(16),
             itemBuilder: (context, index) {
               final goal = goalViewModel.goals[index];
-              return _buildGoalCard(goal as Goal);
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => GoalDetailScreen(goal: goal),
+                    ),
+                  );
+                },
+                child: _buildGoalCard(goal as Goal),
+              );
             },
           );
         },
@@ -227,6 +239,13 @@ class _GoalScreenState extends State<GoalScreen> {
     final _nameController = TextEditingController();
     final _amountController = TextEditingController();
     DateTime _selectedDate = DateTime.now().add(const Duration(days: 30));
+    int? _selectedCategoryId;
+
+    final goalViewModel = context.read<GoalViewModel>();
+    final transactionViewmodel = context.read<TransactionViewModel>();
+
+    // Cargar categorías antes de mostrar el diálogo
+    await transactionViewmodel.fetchCategoriesByType(1);
 
     showDialog(
       context: context,
@@ -243,7 +262,7 @@ class _GoalScreenState extends State<GoalScreen> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFFFFFFF),
+                    color: Color(0xFF21005D),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -251,6 +270,7 @@ class _GoalScreenState extends State<GoalScreen> {
                   key: _formKey,
                   child: Column(
                     children: [
+                      // Campo para el nombre del objetivo
                       TextFormField(
                         controller: _nameController,
                         decoration: InputDecoration(
@@ -275,6 +295,8 @@ class _GoalScreenState extends State<GoalScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
+
+                      // Campo para la cantidad del objetivo
                       TextFormField(
                         controller: _amountController,
                         keyboardType: TextInputType.number,
@@ -301,6 +323,39 @@ class _GoalScreenState extends State<GoalScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
+
+                      // Selector de categoría
+                      DropdownButtonFormField<int>(
+                        value: _selectedCategoryId,
+                        decoration: InputDecoration(
+                          labelText: "Category",
+                          labelStyle: const TextStyle(color: Color(0xFF6750A4)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: const Color(0xFF6750A4).withOpacity(0.5),
+                            ),
+                          ),
+                        ),
+                        items: transactionViewmodel.categories.map((category) {
+                          return DropdownMenuItem<int>(
+                            value: category['id'],
+                            child: Text(category['name']),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() => _selectedCategoryId = value);
+                        },
+                        validator: (value) {
+                          if (value == null) {
+                            return "Please select a category";
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Selector de fecha
                       InkWell(
                         onTap: () async {
                           final date = await showDatePicker(
@@ -388,7 +443,7 @@ class _GoalScreenState extends State<GoalScreen> {
                             createdAt: DateTime.now(),
                             updatedAt: DateTime.now(),
                           );
-                          context.read<GoalViewModel>().addGoal(newGoal);
+                          context.read<GoalViewModel>().addGoalWithCategory(newGoal, _selectedCategoryId!);
                           Navigator.of(context).pop();
                         }
                       },

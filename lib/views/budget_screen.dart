@@ -383,21 +383,21 @@ class _BudgetScreenState extends State<BudgetScreen> {
     final _amountController = TextEditingController();
     int? selectedCategory;
 
-    // Espera a que las categorías disponibles se carguen
-    final availableCategories = await context.read<TransactionViewModel>().getAvailableCategories();
-    final expenseCategories = availableCategories.where((category) => (category as Category).type_id == 1).toList();
-    if (availableCategories.isEmpty) {
-      // Si no hay categorías disponibles, muestra un mensaje
+    final allCategories = await context.read<TransactionViewModel>().getAvailableCategories();
+    final expenseCategories = allCategories
+        .where((category) => (category as Category).type_id == 2)
+        .toList();
+
+    if (expenseCategories.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("No categories available. Please add a category first."),
+          content: Text("There are no expense categories available"),
           backgroundColor: Color(0xFF6750A4),
         ),
       );
       return;
     }
 
-    // Muestra el diálogo una vez que las categorías estén disponibles
     showDialog(
       context: context,
       builder: (context) {
@@ -409,8 +409,12 @@ class _BudgetScreenState extends State<BudgetScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  "Add New Budget",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,color: Color(0xFF21005D)),
+                  "New Budget",
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF21005D),
+                  ),
                 ),
                 const SizedBox(height: 24),
                 Form(
@@ -420,19 +424,27 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       TextFormField(
                         controller: _amountController,
                         keyboardType: TextInputType.number,
-                        decoration: InputDecoration(labelText: "Amount",prefixText: "S/",
-                          labelStyle:
-                          const TextStyle(color: Color(0xFF6750A4)),
+                        decoration: InputDecoration(
+                          labelText: "Amount",
+                          prefixText: "S/ ",
+                          labelStyle: const TextStyle(color: Color(0xFF6750A4)),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                            const BorderSide(color: Color(0xFF6750A4)),
+                            borderSide: const BorderSide(color: Color(0xFF6750A4)),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                            color: const Color(0xFF6750A4).withOpacity(0.5),
+                              color: const Color(0xFF6750A4).withOpacity(0.5),
+                            ),
                           ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFB3261E)),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFB3261E)),
                           ),
                         ),
                         validator: (value) {
@@ -440,15 +452,15 @@ class _BudgetScreenState extends State<BudgetScreen> {
                             return "Please enter an amount";
                           }
                           if (double.tryParse(value) == null || double.parse(value) <= 0) {
-                            return "Please enter a valid amount greater than 0";
+                            return "Please enter a valid amount";
                           }
                           return null;
                         },
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
                       DropdownButtonFormField<int>(
                         value: selectedCategory,
-                        items: availableCategories
+                        items: expenseCategories
                             .map((category) => DropdownMenuItem<int>(
                           value: (category as Category).id,
                           child: Text(category.name),
@@ -463,22 +475,47 @@ class _BudgetScreenState extends State<BudgetScreen> {
                           }
                           return null;
                         },
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: "Category",
-                          border: OutlineInputBorder(),
+                          labelStyle: const TextStyle(color: Color(0xFF6750A4)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: const Color(0xFF6750A4).withOpacity(0.5),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFF6750A4)),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFB3261E)),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFB3261E)),
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text("Cancel"),
+                      child: const Text(
+                        "Cancel",
+                        style: TextStyle(color: Colors.grey),
+                      ),
                     ),
+                    const SizedBox(width: 12),
                     ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
@@ -487,7 +524,23 @@ class _BudgetScreenState extends State<BudgetScreen> {
                           Navigator.of(context).pop();
                         }
                       },
-                      child: const Text("Add"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6750A4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: const Text(
+                        "Save",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
                   ],
                 ),
