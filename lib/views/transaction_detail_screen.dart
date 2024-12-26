@@ -1,7 +1,8 @@
+import 'package:chioneapp/viewmodels/goal_view_model.dart';
 import 'package:chioneapp/views/edit_transaction_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/transaction_view_model.dart';
+import 'package:chioneapp/viewmodels/transaction_view_model.dart';
 
 class TransactionDetailScreen extends StatefulWidget {
   final int transactionId;
@@ -77,7 +78,10 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
           IconButton(
             icon: const Icon(Icons.delete_outline),
             color: Colors.redAccent,
-            onPressed: () => _deleteTransaction(context, _transaction!),
+            onPressed: () {
+              final goalViewModel = Provider.of<GoalViewModel>(context, listen: false);
+              _deleteTransaction(context, _transaction!, goalViewModel);
+            },
           ),
         ],
       ),
@@ -270,11 +274,16 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     );
   }
 
-  void _deleteTransaction(BuildContext context, Map<String, dynamic> transaction) async {
-    final viewModel = Provider.of<TransactionViewModel>(context, listen: false);
+  void _deleteTransaction(BuildContext context, Map<String, dynamic> transaction,GoalViewModel goalViewModel) async {
+    final transactionViewModel = Provider.of<TransactionViewModel>(context, listen: false);
     bool confirm = await _showConfirmationDialog(context);
     if (confirm) {
-      await viewModel.deleteTransaction(transaction['id'], transaction['type_id']);
+      await transactionViewModel.deleteTransaction(
+        transaction['id'],
+        transaction['type_id'],
+        goalViewModel,
+        goalId: transaction['goal_id'],
+      );
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

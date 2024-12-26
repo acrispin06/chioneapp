@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../services/transaction_service.dart';
-import 'goal_view_model.dart';
+import 'package:chioneapp/viewmodels/goal_view_model.dart';
 
 class TransactionViewModel with ChangeNotifier {
   final TransactionService _transactionService = TransactionService();
@@ -94,6 +94,9 @@ class TransactionViewModel with ChangeNotifier {
 
       if (goalId != null) {
         await fetchGoalTransactions(goalId);
+
+        // Call GoalViewModel methods directly
+        await goalViewModel.syncGoalProgress(goalId);
         goalViewModel.handleTransactionChange(goalId);
       }
     } catch (e) {
@@ -131,12 +134,23 @@ class TransactionViewModel with ChangeNotifier {
 
 
 
-  Future<void> deleteTransaction(int id, int typeId) async {
-    await _transactionService.deleteTransaction(id, typeId);
-    await fetchAllTransactions();
-    await fetchSummaryData();
-    await GoalViewModel().syncGoalProgress(0);
-    notifyListeners();
+  Future<void> deleteTransaction(int id, int typeId, GoalViewModel goalViewModel, {int? goalId}) async {
+    _setLoadingState(true);
+    try {
+      await _transactionService.deleteTransaction(id, typeId);
+      await fetchAllTransactions();
+      await fetchSummaryData();
+
+      if (goalId != null) {
+        // Sincronizar progreso del objetivo usando el GoalViewModel
+        await goalViewModel.syncGoalProgress(goalId);
+      }
+      notifyListeners();
+    } catch (e) {
+      _setErrorMessage('Error deleting transaction: $e');
+    } finally {
+      _setLoadingState(false);
+    }
   }
 
   Future<void> fetchSummaryData() async {

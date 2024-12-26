@@ -1,7 +1,7 @@
+import 'package:chioneapp/models/goal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:chioneapp/models/goal.dart';
-import '../viewmodels/goal_view_model.dart';
+import 'package:chioneapp/viewmodels/goal_view_model.dart';
 import '../viewmodels/transaction_view_model.dart';
 import 'goal_detail_screen.dart';
 
@@ -82,6 +82,8 @@ class _GoalScreenState extends State<GoalScreen> {
             padding: const EdgeInsets.all(16),
             itemBuilder: (context, index) {
               final goal = goalViewModel.goals[index];
+              final progress = goal.currentAmount / goal.amount;
+
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -89,9 +91,12 @@ class _GoalScreenState extends State<GoalScreen> {
                     MaterialPageRoute(
                       builder: (context) => GoalDetailScreen(goal: goal),
                     ),
-                  );
+                  ).then((_) {
+                    // Refresh the goal list when returning from detail screen
+                    goalViewModel.fetchGoals();
+                  });
                 },
-                child: _buildGoalCard(goal as Goal),
+                child: _buildGoalCard(goal, progress),
               );
             },
           );
@@ -106,8 +111,7 @@ class _GoalScreenState extends State<GoalScreen> {
     );
   }
 
-  Widget _buildGoalCard(Goal goal) {
-    final double progress = (goal.currentAmount / goal.amount).clamp(0, 1);
+  Widget _buildGoalCard(Goal goal, double progress) {
     final daysLeft = goal.targetDate.difference(DateTime.now()).inDays;
 
     return Card(
@@ -212,7 +216,7 @@ class _GoalScreenState extends State<GoalScreen> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: LinearProgressIndicator(
-                  value: progress,
+                  value: progress.clamp(0,1),
                   backgroundColor: const Color(0xFF6750A4).withOpacity(0.1),
                   color: progress >= 1 ? Colors.green : const Color(0xFF6750A4),
                   minHeight: 8,

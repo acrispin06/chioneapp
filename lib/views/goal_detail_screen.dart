@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/goal.dart';
-import '../viewmodels/goal_view_model.dart';
+import 'package:chioneapp/models/goal.dart';
+import 'package:chioneapp/viewmodels/goal_view_model.dart';
 import '../viewmodels/transaction_view_model.dart';
 
 class GoalDetailScreen extends StatefulWidget {
