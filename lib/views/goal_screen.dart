@@ -82,7 +82,7 @@ class _GoalScreenState extends State<GoalScreen> {
             padding: const EdgeInsets.all(16),
             itemBuilder: (context, index) {
               final goal = goalViewModel.goals[index];
-              final progress = goal.currentAmount / goal.amount;
+              final currentProgress = goal.currentAmount / goal.amount;
 
               return GestureDetector(
                 onTap: () {
@@ -91,12 +91,12 @@ class _GoalScreenState extends State<GoalScreen> {
                     MaterialPageRoute(
                       builder: (context) => GoalDetailScreen(goal: goal),
                     ),
-                  ).then((_) {
+                  ).then((_) async {
                     // Refresh the goal list when returning from detail screen
                     goalViewModel.fetchGoals();
                   });
                 },
-                child: _buildGoalCard(goal, progress),
+                child: _buildGoalCard(goal, currentProgress),
               );
             },
           );

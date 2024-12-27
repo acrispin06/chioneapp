@@ -98,7 +98,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
 
   Widget _buildGoalSummary() {
     //calculate progress
-    final progress = context.watch<GoalViewModel>().goals.firstWhere((goal) => goal.id == widget.goal.id).currentAmount / widget.goal.amount;
+    final currentProgress = context.watch<GoalViewModel>().goals.firstWhere((goal) => goal.id == widget.goal.id).currentAmount / widget.goal.amount;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -146,18 +146,18 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
-              value: progress,
+              value: currentProgress,
               backgroundColor: const Color(0xFF6750A4).withOpacity(0.1),
-              color: progress >= 1 ? Colors.green : const Color(0xFF6750A4),
+              color: currentProgress >= 1 ? Colors.green : const Color(0xFF6750A4),
               minHeight: 8,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            "${(progress * 100).toStringAsFixed(1)}% completed",
+            "${(currentProgress * 100).toStringAsFixed(1)}% completed",
             style: TextStyle(
               fontSize: 14,
-              color: progress >= 1 ? Colors.green : const Color(0xFF6750A4),
+              color: currentProgress >= 1 ? Colors.green : const Color(0xFF6750A4),
               fontWeight: FontWeight.w500,
             ),
           ),

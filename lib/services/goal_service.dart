@@ -41,13 +41,13 @@ class GoalService {
   }
 
   /// Actualizar el progreso de una meta
-  Future<int> updateGoalProgress(int goalId, double progress) async {
+  Future<int> updateGoalProgress(int goalId, double currentAmount) async {
     final db = await _dbHelper.database;
     return await db.rawUpdate('''
-      UPDATE goals
-      SET progress = ?
-      WHERE id = ?
-    ''', [progress, goalId]);
+    UPDATE goals
+    SET currentAmount = ?
+    WHERE id = ?
+  ''', [currentAmount, goalId]);
   }
 
   /// Eliminar una meta específica
@@ -83,7 +83,6 @@ class GoalService {
 
   /// Sincronizar todas las metas recalculando su progreso
   Future<void> syncAllGoals() async {
-    final db = await _dbHelper.database;
     final goals = await getAllGoals();
 
     for (final goal in goals) {
