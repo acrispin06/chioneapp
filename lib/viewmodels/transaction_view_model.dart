@@ -87,18 +87,14 @@ class TransactionViewModel with ChangeNotifier {
     _setLoadingState(true);
     try {
       await _transactionService.addTransactionWithGoal(transaction, goalId);
-
-      // Update transactions and goals
-      await fetchAllTransactions();
-      await fetchSummaryData();
-
       if (goalId != null) {
         await fetchGoalTransactions(goalId);
-
-        // Call GoalViewModel methods directly
         await goalViewModel.syncGoalProgress(goalId);
         goalViewModel.handleTransactionChange(goalId);
       }
+      await fetchAllTransactions();
+      await fetchSummaryData();
+      notifyListeners();
     } catch (e) {
       _setErrorMessage('Error adding transaction: $e');
     } finally {

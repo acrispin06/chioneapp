@@ -1,9 +1,11 @@
 import 'package:chioneapp/models/category.dart';
+import 'package:chioneapp/services/goal_service.dart';
 import '../db/database_helper.dart';
 import 'package:sqflite/sqflite.dart';
 
 class TransactionService {
   final DatabaseHelper _dbHelper = DatabaseHelper();
+  final GoalService _goalService = GoalService();
 
   // Obtener todas las transacciones con JOIN a categorías, íconos y tipos
   Future<List<Map<String, dynamic>>> getAllTransactions() async {
@@ -121,6 +123,9 @@ class TransactionService {
           [transactionAmount, goalId],
         );
       }
+
+      //sincronizar goals
+      await _goalService.syncAllGoals();
     }
 
     return transactionId;
@@ -203,9 +208,10 @@ class TransactionService {
     await db.update('goal_transactions', {
       'progress_percentage': ((transaction['amount'] as double )/ oldAmount) * 100,
     }, where: 'transaction_id = ?', whereArgs: [transaction['id']]);
+
+    //sincronizar goals
+    await _goalService.syncAllGoals();
   }
-
-
 
   // Eliminar transacción con sincronización
   Future<void> deleteTransaction(int id, int typeId) async {
@@ -242,6 +248,9 @@ class TransactionService {
         WHERE transaction_id = ?
       )
     ''', [amount, id]);
+
+    //sincronizar goals
+    await _goalService.syncAllGoals();
   }
 
 

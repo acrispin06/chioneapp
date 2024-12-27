@@ -275,7 +275,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   }
 
   void _deleteTransaction(BuildContext context, Map<String, dynamic> transaction,GoalViewModel goalViewModel) async {
-    final transactionViewModel = Provider.of<TransactionViewModel>(context, listen: false);
+    final transactionViewModel = context.read<TransactionViewModel>();
     bool confirm = await _showConfirmationDialog(context);
     if (confirm) {
       await transactionViewModel.deleteTransaction(
@@ -284,6 +284,9 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         goalViewModel,
         goalId: transaction['goal_id'],
       );
+      if (transaction['goal_id'] != null) {
+        await goalViewModel.syncGoalProgress(transaction['goal_id']);
+      }
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
