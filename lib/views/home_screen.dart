@@ -1,6 +1,8 @@
 import 'package:chioneapp/views/notification_screen.dart';
 import 'package:chioneapp/views/report_screen.dart';
+import 'package:chioneapp/viewmodels/user_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../shared/navbar.dart';
 import 'budget_screen.dart';
 import 'goal_screen.dart';
@@ -15,6 +17,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  String? _userName;
 
   final List<Widget> _screens = [
     TransactionScreen(),
@@ -26,6 +29,16 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+      _fetchUserName();
+    });
+  }
+
+  Future<void> _fetchUserName() async {
+    final userId = 1;  //Hardcoded user id
+    final userViewModel = Provider.of<UserViewModel>(context, listen: false);
+    final name = await userViewModel.getNameOfUserById(userId);
+    setState(() {
+      _userName = name;
     });
   }
 
@@ -65,7 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Hi, Welcome Back",
+          _userName != null ? "Hi, $_userName" : "Hi, welcome back",
           style: TextStyle(
             fontSize: 18,
             color: Colors.white,
@@ -117,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     )
-        : const SizedBox.shrink(); // No muestra nada si no hay notificaciones
+        : const SizedBox.shrink();
   }
 
   String _getGreeting() {
