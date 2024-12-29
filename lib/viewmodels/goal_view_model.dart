@@ -10,11 +10,13 @@ class GoalViewModel with ChangeNotifier {
   bool _isLoading = false;
   String _errorMessage = '';
   List<Goal> _goals = [];
+  List<Goal> _filteredGoals = [];
 
   // Getters
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
   List<Goal> get goals => _goals;
+  List<Goal> get filteredGoals => _filteredGoals;
 
   // Métodos privados para manejo de estado
   void _setLoading(bool value) {
@@ -111,7 +113,6 @@ class GoalViewModel with ChangeNotifier {
     }
   }
 
-  /// Actualizar una meta existente
   Future<void> updateGoal(Goal updatedGoal) async {
     _setLoading(true);
     try {
@@ -133,6 +134,16 @@ class GoalViewModel with ChangeNotifier {
       _setErrorMessage('Error syncing goal progress: $e');
     } finally {
       _setLoading(false);
+    }
+  }
+
+  Future<void> fetchGoalsByCategory(int categoryId) async {
+    try {
+      final goalData = await _goalService.getGoalsByCategory(categoryId);
+      _filteredGoals = goalData.map((data) => Goal.fromMap(data)).toList();
+      notifyListeners();
+    } catch (e) {
+      _setErrorMessage('Error fetching goals by category: $e');
     }
   }
 }

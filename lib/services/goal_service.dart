@@ -90,4 +90,14 @@ class GoalService {
       await _recalculateProgress(goalId);
     }
   }
+
+  Future<List<Map<String, dynamic>>> getGoalsByCategory(int categoryId) async {
+    final db = await _dbHelper.database;
+    return await db.rawQuery('''
+    SELECT g.*
+    FROM goals g
+    JOIN goal_categories gc ON g.id = gc.goal_id
+    WHERE gc.category_id = ?
+  ''', [categoryId]);
+  }
 }

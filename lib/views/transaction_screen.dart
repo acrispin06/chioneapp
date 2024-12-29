@@ -58,185 +58,194 @@ class _TransactionScreenState extends State<TransactionScreen> {
   Future<void> _showAddTransactionDialog() async {
     final transactionViewModel = Provider.of<TransactionViewModel>(context, listen: false);
     final goalViewModel = Provider.of<GoalViewModel>(context, listen: false);
-    // Fetch available goals
+
+    // Fetch initial data
     await goalViewModel.fetchGoals();
 
     await showDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Title
-              Text(
-                "Add New Transaction",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title
+                      Text(
+                        "Add New Transaction",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Form fields
+                      Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            // Amount
+                            _buildTextField("Amount", _amountController, TextInputType.number),
+                            const SizedBox(height: 12),
+
+                            // Description
+                            _buildTextField("Description", _descriptionController, TextInputType.text),
+                            const SizedBox(height: 12),
+
+                            // Type Dropdown
+                            _buildTypeDropdown(setState),
+                            const SizedBox(height: 12),
+
+                            // Category Dropdown
+                            _buildCategoryDropdown(setState),
+                            const SizedBox(height: 12),
+
+                            // Goal Dropdown (only for income)
+                            if (_selectedTypeId == 1) _buildGoalDropdown(goalViewModel),
+                            const SizedBox(height: 12),
+
+                            // Date Picker
+                            _buildDatePicker(setState),
+                            const SizedBox(height: 12),
+
+                            // Time Picker
+                            _buildTimePicker(setState),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Actions
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text(
+                              "Cancel",
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: _addTransaction,
+                            icon: const Icon(Icons.add, color: Colors.white),
+                            label: const Text("Add", style: TextStyle(color: Colors.white)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Form fields
-              Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    // Amount
-                    _buildTextField("Amount", _amountController, TextInputType.number),
-                    const SizedBox(height: 12),
-
-                    // Description
-                    _buildTextField("Description", _descriptionController, TextInputType.text),
-                    const SizedBox(height: 12),
-
-                    // Type Dropdown
-                    _buildTypeDropdown(),
-                    const SizedBox(height: 12),
-
-                    // Category Dropdown
-                    _buildCategoryDropdown(),
-                    const SizedBox(height: 12),
-
-                    // Goal Dropdown (only for income)
-                    if (_selectedTypeId == 1) _buildGoalDropdown(goalViewModel),
-                    const SizedBox(height: 12),
-
-                    // Date Picker
-                    _buildDatePicker(),
-                    const SizedBox(height: 12),
-
-                    // Time Picker
-                    _buildTimePicker(),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Actions
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text(
-                      "Cancel",
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: _addTransaction,
-                    icon: const Icon(Icons.add, color: Colors.white),
-                    label: const Text("Add", style: TextStyle(color: Colors.white)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
   Widget _buildGoalDropdown(GoalViewModel goalViewModel) {
-    return DropdownButtonFormField<int>(
-      value: _selectedGoalId,
-      decoration: const InputDecoration(
-        labelText: "Goal",
-      ),
-      items: goalViewModel.goals.map((goal) {
-        return DropdownMenuItem<int>(
-          value: (goal as Goal).id,
-          child: Text((goal as Goal).name),
-        );
-      }).toList(),
-      onChanged: (value) {
-        setState(() {
-          _selectedGoalId = value;
-        });
-      },
-      validator: (value) {
-        if (_selectedTypeId == 1 && value == null) {
-          return "Please select a goal for this income.";
+    return Consumer<GoalViewModel>(
+      builder: (context, viewModel, _) {
+        if (_selectedTypeId == 2 || _selectedCategoryId == null) {
+          return const SizedBox();
         }
-        return null;
+
+        return DropdownButtonFormField<int>(
+          value: _selectedGoalId,
+          decoration: const InputDecoration(
+            labelText: "Goal",
+          ),
+          items: viewModel.filteredGoals.map((goal) {
+            return DropdownMenuItem<int>(
+              value: goal.id,
+              child: Text(goal.name),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedGoalId = value;
+            });
+          },
+        );
       },
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller,
-      TextInputType type) {
+  Widget _buildTextField(String label, TextEditingController controller, TextInputType type) {
     return TextFormField(
       controller: controller,
       keyboardType: type,
       decoration: InputDecoration(
         labelText: label,
       ),
-      validator: (value) =>
-      value == null || value.isEmpty
-          ? "Please enter $label"
-          : null,
+      validator: (value) => value == null || value.isEmpty ? "Please enter $label" : null,
     );
   }
 
-  Widget _buildTypeDropdown() {
+  Widget _buildTypeDropdown(void Function(void Function()) setState) {
     return DropdownButtonFormField<int>(
       value: _selectedTypeId,
-      decoration: InputDecoration(
-        labelText: "Type",
-      ),
+      decoration: const InputDecoration(labelText: "Type"),
       items: const [
         DropdownMenuItem(value: 1, child: Text("Income")),
         DropdownMenuItem(value: 2, child: Text("Expense")),
       ],
       onChanged: (value) async {
-        setState(() => _selectedTypeId = value ?? 1);
-        await Provider.of<TransactionViewModel>(context, listen: false)
-            .fetchCategoriesByType(_selectedTypeId);
-        _initializeCategorySelection();
+        setState(() {
+          _selectedTypeId = value ?? 1;
+          _selectedGoalId = null; // Reset the goal if switching types
+        });
+
+        // Fetch categories based on the type
+        await Provider.of<TransactionViewModel>(context, listen: false).fetchCategoriesByType(_selectedTypeId);
+        setState(() => _initializeCategorySelection());
       },
     );
   }
 
-  Widget _buildCategoryDropdown() {
+  Widget _buildCategoryDropdown(void Function(void Function()) setState) {
     return Consumer<TransactionViewModel>(
       builder: (context, viewModel, _) {
         return DropdownButtonFormField<int>(
           value: _selectedCategoryId,
-          decoration: InputDecoration(
-            labelText: "Category",
-          ),
+          decoration: const InputDecoration(labelText: "Category"),
           items: viewModel.categories.map((category) {
             return DropdownMenuItem<int>(
               value: category['id'] as int,
               child: Text(category['name']),
             );
           }).toList(),
-          onChanged: (value) {
+          onChanged: (value) async {
             if (value != null) {
-              final selectedCategory = viewModel.categories.firstWhere((
-                  c) => c['id'] == value);
+              final goalViewModel = Provider.of<GoalViewModel>(context, listen: false);
               setState(() {
                 _selectedCategoryId = value;
-                _selectedIconId = selectedCategory['icon_id'];
+                _selectedGoalId = null; // Reset goal dropdown
               });
+
+              // Filter goals based on the selected category
+              await goalViewModel.fetchGoalsByCategory(value);
             }
           },
         );
@@ -244,7 +253,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
     );
   }
 
-  Widget _buildDatePicker() {
+  Widget _buildDatePicker(void Function(void Function()) setState) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       title: Row(
@@ -256,7 +265,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
           const SizedBox(width: 8),
           Text(
             "${_selectedDate.toLocal()}".split(' ')[0],
-            style: TextStyle(fontSize: 16, color: Colors.black),
+            style: const TextStyle(fontSize: 16, color: Colors.black),
           ),
         ],
       ),
@@ -279,8 +288,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
     );
   }
 
-
-  Widget _buildTimePicker() {
+  Widget _buildTimePicker(void Function(void Function()) setState) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       title: Text("Time: ${_selectedTime.format(context)}"),
@@ -312,7 +320,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
         'updated_at': DateTime.now().toIso8601String(),
       };
 
-      await Provider.of<TransactionViewModel>(context, listen: false).addTransactionWithGoal(transaction, goalViewModel, goalId: _selectedGoalId);
+      // Only include goalId if it is selected
+      await transactionViewModel.addTransactionWithGoal(transaction, goalViewModel, goalId: _selectedGoalId);
       Navigator.of(context).pop();
       _clearForm();
     }
