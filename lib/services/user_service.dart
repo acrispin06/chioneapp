@@ -14,4 +14,14 @@ class UserService {
   Future<void> updateUserBudgetGoal(int userId) async {
     await _dbHelper.updateUserBudgetGoal(userId);
   }
+
+  Future<String> fetchNameOfUserById(int userId) async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> users = await db.rawQuery('''
+      SELECT name
+      FROM users
+      WHERE id = ?
+    ''', [userId]);
+    return users[0]['name'];
+  }
 }

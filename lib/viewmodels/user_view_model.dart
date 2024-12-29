@@ -34,4 +34,9 @@ class UserViewModel with ChangeNotifier {
       _errorMessage = 'Error adding user';
     }
   }
+
+  //getNameOfUserById
+  Future<String> getNameOfUserById(int userId) async {
+    return await _userService.fetchNameOfUserById(userId);
+  }
 }
