@@ -1,13 +1,13 @@
-import 'package:chioneapp/viewmodels/goal_view_model.dart';
-import 'package:chioneapp/views/edit_transaction_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:chioneapp/viewmodels/transaction_view_model.dart';
+import '../viewmodels/goal_view_model.dart';
+import '../viewmodels/transaction_view_model.dart';
+import 'edit_transaction_screen.dart';
 
 class TransactionDetailScreen extends StatefulWidget {
   final int transactionId;
 
-  const TransactionDetailScreen({super.key, required this.transactionId});
+  const TransactionDetailScreen({Key? key, required this.transactionId}) : super(key: key);
 
   @override
   State<TransactionDetailScreen> createState() => _TransactionDetailScreenState();
@@ -34,13 +34,18 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Failed to load transaction"),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      Navigator.of(context).pop();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text("Failed to load transaction"),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red[400],
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+        Navigator.of(context).pop();
+      }
     }
   }
 
@@ -48,9 +53,21 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   Widget build(BuildContext context) {
     if (_transaction == null) {
       return Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(
-            color: Theme.of(context).colorScheme.primary,
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                Colors.white,
+              ],
+            ),
+          ),
+          child: Center(
+            child: CircularProgressIndicator(
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ),
         ),
       );
@@ -60,91 +77,102 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     final amount = _transaction!['amount'] ?? 0.0;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
-          color: Colors.black87,
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            color: Colors.black87,
-            onPressed: () => _showEditTransaction(context, _transaction!),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            color: Colors.redAccent,
-            onPressed: () {
-              final goalViewModel = Provider.of<GoalViewModel>(context, listen: false);
-              _deleteTransaction(context, _transaction!, goalViewModel);
-            },
+      backgroundColor: Theme.of(context).colorScheme.background,
+      body: CustomScrollView(
+        slivers: [
+          _buildSliverAppBar(context, isIncome),
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                _buildAmountCard(isIncome, amount),
+                const SizedBox(height: 16),
+                _buildDetailsCard(),
+                const SizedBox(height: 24),
+                _buildActionButtons(context),
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
         ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildAmountSection(isIncome, amount),
-            const SizedBox(height: 24),
-            _buildDetailsCard(),
-          ],
-        ),
       ),
     );
   }
 
-  Widget _buildAmountSection(bool isIncome, double amount) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+  Widget _buildSliverAppBar(BuildContext context, bool isIncome) {
+    return SliverAppBar(
+      expandedHeight: 120,
+      pinned: true,
+      stretch: true,
+      backgroundColor: isIncome ? Colors.green[50] : Colors.red[50],
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new_rounded),
+        color: Colors.black87,
+        onPressed: () => Navigator.pop(context),
+      ),
+      flexibleSpace: FlexibleSpaceBar(
+        title: Text(
+          isIncome ? 'Income Details' : 'Expense Details',
+          style: TextStyle(
+            color: isIncome ? Colors.green[700] : Colors.red[700],
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
         ),
+        centerTitle: true,
+      ),
+    );
+  }
+
+  Widget _buildAmountCard(bool isIncome, double amount) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isIncome ? Colors.green[50] : Colors.red[50],
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: (isIncome ? Colors.green : Colors.red).withOpacity(0.1),
             blurRadius: 10,
-            offset: const Offset(0, 5),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         children: [
           Text(
-            isIncome ? 'Income' : 'Expense',
+            'S/ ${amount.toStringAsFixed(2)}',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 36,
+              fontWeight: FontWeight.bold,
               color: isIncome ? Colors.green[700] : Colors.red[700],
-              fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                isIncome ? Icons.arrow_upward : Icons.arrow_downward,
-                color: isIncome ? Colors.green[700] : Colors.red[700],
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'S/ ${amount.toStringAsFixed(2)}',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: (isIncome ? Colors.green : Colors.red).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isIncome ? Icons.arrow_upward : Icons.arrow_downward,
+                  size: 16,
                   color: isIncome ? Colors.green[700] : Colors.red[700],
                 ),
-              ),
-            ],
+                const SizedBox(width: 4),
+                Text(
+                  isIncome ? 'Income' : 'Expense',
+                  style: TextStyle(
+                    color: isIncome ? Colors.green[700] : Colors.red[700],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -153,49 +181,37 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
 
   Widget _buildDetailsCard() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: const Offset(0, 5),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Text(
-              'Transaction Details',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-          _buildDetailTile(
-            icon: Icons.category_outlined,
+          _buildDetailItem(
+            icon: Icons.category_rounded,
             title: "Category",
             value: _transaction!['category_name'] ?? 'N/A',
           ),
-          _buildDetailTile(
-            icon: Icons.description_outlined,
+          _buildDetailItem(
+            icon: Icons.description_rounded,
             title: "Description",
             value: _transaction!['description'] ?? 'N/A',
           ),
-          _buildDetailTile(
-            icon: Icons.calendar_today_outlined,
+          _buildDetailItem(
+            icon: Icons.calendar_today_rounded,
             title: "Date",
-            value: _transaction!['date']?.toString().split('T')[0] ?? 'N/A',
+            value: _formatDate(_transaction!['date']),
           ),
-          _buildDetailTile(
-            icon: Icons.access_time_outlined,
+          _buildDetailItem(
+            icon: Icons.access_time_rounded,
             title: "Time",
             value: _transaction!['time'] ?? 'N/A',
             isLast: true,
@@ -205,7 +221,13 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     );
   }
 
-  Widget _buildDetailTile({
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return 'N/A';
+    final date = DateTime.parse(dateStr);
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  Widget _buildDetailItem({
     required IconData icon,
     required String title,
     required String value,
@@ -214,11 +236,11 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          padding: const EdgeInsets.all(16),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -226,7 +248,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                 child: Icon(
                   icon,
                   color: Theme.of(context).colorScheme.primary,
-                  size: 20,
+                  size: 22,
                 ),
               ),
               const SizedBox(width: 16),
@@ -239,6 +261,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -246,7 +269,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                       value,
                       style: const TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -258,25 +281,68 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         if (!isLast)
           Divider(
             height: 1,
-            indent: 20,
-            endIndent: 20,
+            indent: 16,
+            endIndent: 16,
             color: Colors.grey[200],
           ),
       ],
     );
   }
 
-  void _showEditTransaction(BuildContext context, Map<String, dynamic> transaction) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => EditTransactionScreen(transaction: transaction),
+  Widget _buildActionButtons(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () => _showEditTransaction(context, _transaction!),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: const Icon(Icons.edit_rounded),
+              label: const Text(
+                'Edit Transaction',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          IconButton(
+            onPressed: () {
+              final goalViewModel = Provider.of<GoalViewModel>(context, listen: false);
+              _deleteTransaction(context, _transaction!, goalViewModel);
+            },
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.red[50],
+              padding: const EdgeInsets.all(16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: Icon(
+              Icons.delete_outline_rounded,
+              color: Colors.red[700],
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  void _deleteTransaction(BuildContext context, Map<String, dynamic> transaction,GoalViewModel goalViewModel) async {
+  Future<void> _deleteTransaction(
+      BuildContext context,
+      Map<String, dynamic> transaction,
+      GoalViewModel goalViewModel,
+      ) async {
     final transactionViewModel = context.read<TransactionViewModel>();
     bool confirm = await _showConfirmationDialog(context);
+
     if (confirm) {
       await transactionViewModel.deleteTransaction(
         transaction['id'],
@@ -284,16 +350,23 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         goalViewModel,
         goalId: transaction['goal_id'],
       );
+
       if (transaction['goal_id'] != null) {
         await goalViewModel.syncGoalProgress(transaction['goal_id']);
       }
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Transaction deleted successfully"),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text("Transaction deleted successfully"),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.green[400],
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
     }
   }
 
@@ -305,11 +378,14 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
           borderRadius: BorderRadius.circular(20),
         ),
         title: const Text(
-          "Confirm Deletion",
-          style: TextStyle(fontWeight: FontWeight.bold),
+          "Delete Transaction",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
         ),
         content: const Text(
-          "Are you sure you want to delete this transaction?",
+          "Are you sure you want to delete this transaction? This action cannot be undone.",
           style: TextStyle(fontSize: 16),
         ),
         actions: [
@@ -327,19 +403,31 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             onPressed: () => Navigator.of(context).pop(true),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 12,
               ),
             ),
             child: const Text(
               "Delete",
               style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showEditTransaction(BuildContext context, Map<String, dynamic> transaction) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => EditTransactionScreen(transaction: transaction),
       ),
     );
   }

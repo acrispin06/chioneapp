@@ -1,4 +1,3 @@
-import 'package:chioneapp/models/goal.dart';
 import 'package:chioneapp/viewmodels/goal_view_model.dart';
 import 'package:chioneapp/views/transaction_detail_screen.dart';
 import 'package:flutter/material.dart';
@@ -58,111 +57,127 @@ class _TransactionScreenState extends State<TransactionScreen> {
   Future<void> _showAddTransactionDialog() async {
     final transactionViewModel = Provider.of<TransactionViewModel>(context, listen: false);
     final goalViewModel = Provider.of<GoalViewModel>(context, listen: false);
-
-    // Fetch initial data
     await goalViewModel.fetchGoals();
 
-    await showDialog(
+    await showModalBottomSheet(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title
-                      Text(
-                        "Add New Transaction",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Form fields
-                      Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            // Amount
-                            _buildTextField("Amount", _amountController, TextInputType.number),
-                            const SizedBox(height: 12),
-
-                            // Description
-                            _buildTextField("Description", _descriptionController, TextInputType.text),
-                            const SizedBox(height: 12),
-
-                            // Type Dropdown
-                            _buildTypeDropdown(setState),
-                            const SizedBox(height: 12),
-
-                            // Category Dropdown
-                            _buildCategoryDropdown(setState),
-                            const SizedBox(height: 12),
-
-                            // Goal Dropdown (only for income)
-                            if (_selectedTypeId == 1) _buildGoalDropdown(goalViewModel),
-                            const SizedBox(height: 12),
-
-                            // Date Picker
-                            _buildDatePicker(setState),
-                            const SizedBox(height: 12),
-
-                            // Time Picker
-                            _buildTimePicker(setState),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Actions
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: const Text(
-                              "Cancel",
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          ElevatedButton.icon(
-                            onPressed: _addTransaction,
-                            icon: const Icon(Icons.add, color: Colors.white),
-                            label: const Text("Add", style: TextStyle(color: Colors.white)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).colorScheme.primary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.85,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              children: [
+                // Handle bar
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  height: 4,
+                  width: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-              ),
-            );
-          },
-        );
-      },
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "New Transaction",
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Form(
+                          key: _formKey,
+                          child: Column(
+                            children: [
+                              _buildSegmentedButton(setState),
+                              const SizedBox(height: 24),
+                              _buildAmountField(),
+                              const SizedBox(height: 16),
+                              _buildDescriptionField(),
+                              const SizedBox(height: 16),
+                              _buildCategoryDropdown(setState),
+                              if (_selectedTypeId == 1) ...[
+                                const SizedBox(height: 16),
+                                _buildGoalDropdown(goalViewModel),
+                              ],
+                              const SizedBox(height: 24),
+                              _buildDateTimeSection(setState),
+                              const SizedBox(height: 32),
+                              _buildSubmitButton(),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
+
+  Widget _buildSegmentedButton(StateSetter setState) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: SegmentedButton<int>(
+        segments: const [
+          ButtonSegment<int>(
+            value: 1,
+            label: Text('Income'),
+            icon: Icon(Icons.arrow_upward),
+          ),
+          ButtonSegment<int>(
+            value: 2,
+            label: Text('Expense'),
+            icon: Icon(Icons.arrow_downward),
+          ),
+        ],
+        selected: {_selectedTypeId},
+        onSelectionChanged: (Set<int> newSelection) async {
+          setState(() => _selectedTypeId = newSelection.first);
+          final viewModel = Provider.of<TransactionViewModel>(context, listen: false);
+          await viewModel.fetchCategoriesByType(_selectedTypeId);
+          _initializeCategorySelection();
+        },
+        style: ButtonStyle(
+          backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                (states) {
+              if (states.contains(MaterialState.selected)) {
+                return Theme.of(context).colorScheme.primary;
+              }
+              return Colors.transparent;
+            },
+          ),
+          foregroundColor: MaterialStateProperty.resolveWith<Color>(
+                (states) {
+              if (states.contains(MaterialState.selected)) {
+                return Colors.white;
+              }
+              return Colors.grey;
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildGoalDropdown(GoalViewModel goalViewModel) {
     return Consumer<GoalViewModel>(
@@ -173,8 +188,13 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
         return DropdownButtonFormField<int>(
           value: _selectedGoalId,
-          decoration: const InputDecoration(
-            labelText: "Goal",
+          decoration: InputDecoration(
+            labelText: 'Goal',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            filled: true,
+            fillColor: Colors.grey[50],
           ),
           items: viewModel.filteredGoals.map((goal) {
             return DropdownMenuItem<int>(
@@ -182,24 +202,51 @@ class _TransactionScreenState extends State<TransactionScreen> {
               child: Text(goal.name),
             );
           }).toList(),
-          onChanged: (value) {
-            setState(() {
-              _selectedGoalId = value;
-            });
-          },
+          onChanged: (value) => setState(() => _selectedGoalId = value),
         );
       },
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, TextInputType type) {
+  Widget _buildAmountField() {
     return TextFormField(
-      controller: controller,
-      keyboardType: type,
+      controller: _amountController,
+      keyboardType: TextInputType.numberWithOptions(decimal: true),
       decoration: InputDecoration(
-        labelText: label,
+        labelText: 'Amount',
+        prefixText: 'S/ ',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        filled: true,
+        fillColor: Colors.grey[50],
       ),
-      validator: (value) => value == null || value.isEmpty ? "Please enter $label" : null,
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter an amount';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildDescriptionField() {
+    return TextFormField(
+      controller: _descriptionController,
+      decoration: InputDecoration(
+        labelText: 'Description',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        filled: true,
+        fillColor: Colors.grey[50],
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter a description';
+        }
+        return null;
+      },
     );
   }
 
@@ -229,23 +276,42 @@ class _TransactionScreenState extends State<TransactionScreen> {
       builder: (context, viewModel, _) {
         return DropdownButtonFormField<int>(
           value: _selectedCategoryId,
-          decoration: const InputDecoration(labelText: "Category"),
+          decoration: InputDecoration(
+            labelText: 'Category',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            filled: true,
+            fillColor: Colors.grey[50],
+          ),
           items: viewModel.categories.map((category) {
             return DropdownMenuItem<int>(
               value: category['id'] as int,
-              child: Text(category['name']),
+              child: Row(
+                children: [
+                  Image.asset(
+                    viewModel.icons[category['icon_id']] ?? 'assets/icons/default.png',
+                    width: 24,
+                    height: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(category['name']),
+                ],
+              ),
             );
           }).toList(),
           onChanged: (value) async {
             if (value != null) {
-              final goalViewModel = Provider.of<GoalViewModel>(context, listen: false);
               setState(() {
                 _selectedCategoryId = value;
-                _selectedGoalId = null; // Reset goal dropdown
+                _selectedGoalId = null;
+                _selectedIconId = viewModel.categories
+                    .firstWhere((cat) => cat['id'] == value)['icon_id'] as int;
               });
-
-              // Filter goals based on the selected category
-              await goalViewModel.fetchGoalsByCategory(value);
+              if (_selectedTypeId == 1) {
+                await Provider.of<GoalViewModel>(context, listen: false)
+                    .fetchGoalsByCategory(value);
+              }
             }
           },
         );
@@ -288,18 +354,79 @@ class _TransactionScreenState extends State<TransactionScreen> {
     );
   }
 
-  Widget _buildTimePicker(void Function(void Function()) setState) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text("Time: ${_selectedTime.format(context)}"),
-      trailing: const Icon(Icons.access_time),
-      onTap: () async {
-        final time = await showTimePicker(
-          context: context,
-          initialTime: _selectedTime,
-        );
-        if (time != null) setState(() => _selectedTime = time);
-      },
+  Widget _buildDateTimeSection(StateSetter setState) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.calendar_today),
+            title: const Text('Date'),
+            trailing: TextButton(
+              child: Text(
+                "${_selectedDate.toLocal()}".split(' ')[0],
+                style: const TextStyle(fontSize: 16),
+              ),
+              onPressed: () async {
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: _selectedDate,
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2100),
+                );
+                if (date != null) setState(() => _selectedDate = date);
+              },
+            ),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.access_time),
+            title: const Text('Time'),
+            trailing: TextButton(
+              child: Text(
+                _selectedTime.format(context),
+                style: const TextStyle(fontSize: 16),
+              ),
+              onPressed: () async {
+                final time = await showTimePicker(
+                  context: context,
+                  initialTime: _selectedTime,
+                );
+                if (time != null) setState(() => _selectedTime = time);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: _addTransaction,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: const Text(
+          'Add Transaction',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
     );
   }
 
@@ -343,7 +470,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFE8DEF8),
       body: CustomScrollView(
         slivers: [
           _buildSliverAppBar(),
@@ -397,26 +524,14 @@ class _TransactionScreenState extends State<TransactionScreen> {
       floating: true,
       pinned: true,
       elevation: 0,
-      backgroundColor: Theme.of(context).colorScheme.primary,
+      backgroundColor: Color(0xFFE8DEF8),
       flexibleSpace: FlexibleSpaceBar(
-        centerTitle: true, // Añadimos esta línea para centrar el título
+        centerTitle: true,
         title: Text(
           'Transactions',
           style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-              colors: [
-                Theme.of(context).colorScheme.primary,
-                Theme.of(context).colorScheme.primary.withOpacity(0.8),
-              ],
-            ),
+            color: Color(0xFF21005D),
+            fontWeight: FontWeight.w900,
           ),
         ),
       ),
