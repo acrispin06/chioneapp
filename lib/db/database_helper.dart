@@ -29,6 +29,13 @@ class DatabaseHelper {
 
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
+    CREATE TABLE IF NOT EXISTS app_metadata (
+      key TEXT PRIMARY KEY,
+      value TEXT
+    );
+    ''');
+
+    await db.execute('''
     CREATE TABLE IF NOT EXISTS currencies (
       currency_id INTEGER PRIMARY KEY,
       name TEXT NOT NULL,
@@ -98,7 +105,8 @@ class DatabaseHelper {
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (category_id) REFERENCES categories(id),
-      FOREIGN KEY (icon_id) REFERENCES icons(icon_id)
+      FOREIGN KEY (icon_id) REFERENCES icons(icon_id),
+      CHECK (amount > 0)
     );
     ''');
 
@@ -114,7 +122,8 @@ class DatabaseHelper {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (category_id) REFERENCES categories(id),
-      FOREIGN KEY (icon_id) REFERENCES icons(icon_id)
+      FOREIGN KEY (icon_id) REFERENCES icons(icon_id),
+      CHECK (amount > 0)
     );
     ''');
 
@@ -188,6 +197,7 @@ class DatabaseHelper {
       new_value TEXT,
       change_date TEXT DEFAULT (datetime('now')),
       changed_by INTEGER,
+      action_type TEXT,
       FOREIGN KEY (changed_by) REFERENCES users(id)
     );
     ''');
@@ -237,7 +247,7 @@ class DatabaseHelper {
     SELECT category_id AS categoryId, SUM(amount) AS spent
     FROM transactions
     WHERE type_id = 2
-    GROUP BY category_id
+    GROUP BY category_id;
     ''');
 
     await db.execute('''
@@ -249,6 +259,8 @@ class DatabaseHelper {
     total_income REAL DEFAULT 0.0,
     total_expense REAL DEFAULT 0.0,
     balance REAL GENERATED ALWAYS AS (total_income - total_expense) VIRTUAL,
+    average_income REAL GENERATED ALWAYS AS (total_income / (julianday(end_date) - julianday(start_date) + 1)) VIRTUAL,
+    average_expense REAL GENERATED ALWAYS AS (total_expense / (julianday(end_date) - julianday(start_date) + 1)) VIRTUAL,
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now')),
     user_id INTEGER,
@@ -256,18 +268,31 @@ class DatabaseHelper {
     );
     ''');
   }
-  //Funcion para crear data de ejemplo
-  Future<void> createExampleData() async{
+
+  Future<void> createExampleData() async {
     final db = await database;
-    // Insert example transaction types and notification types
-    //inserting default values
-    //Currencies
+
+    // Verificar si los datos ya fueron insertados
+    final List<Map<String, dynamic>> result = await db.query(
+      'app_metadata',
+      where: 'key = ?',
+      whereArgs: ['example_data_initialized'],
+    );
+
+    if (result.isNotEmpty) {
+      // Si ya se insertaron los datos, no hacer nada
+      print('Datos de ejemplo ya inicializados.');
+      return;
+    }
+
+    // Insertar datos predeterminados
+    print('Insertando datos de ejemplo...');
     await db.insert('currencies',{'name': 'Nuevo Sol','symbol': 'S/.' } );
     //transaction types
     await db.insert('transaction_types', {'type_name': 'income'});
     await db.insert('transaction_types', {'type_name': 'expense'});
     //users
-    await db.insert('users', {'name': 'Admin', 'currency_id': 1, 'budgetGoal': 0.0});
+    await db.insert('users', {'name': 'Alvaro Crispin', 'currency_id': 1, 'budgetGoal': 0.0});
     //icons
     await db.insert('icons', {'icon_name': 'default', 'icon_path': 'assets/icons/default.png'});
     await db.insert('icons', {'icon_name': 'food', 'icon_path': 'assets/icons/food.png'});
@@ -303,9 +328,6 @@ class DatabaseHelper {
     await db.insert('notifications', {'title': 'Alert 1', 'message': 'Alert message 1', 'date': '2024-11-29', 'type': 'alert', 'entity_id': 1, 'entity_type': 'transaction'});
     await db.insert('notifications', {'title': 'Alert 2', 'message': 'Alert message 2', 'date': '2024-11-29', 'type': 'alert', 'entity_id': 2, 'entity_type': 'transaction'});
     await db.insert('notifications', {'title': 'Alert 3', 'message': 'Alert message 3', 'date': '2024-11-29', 'type': 'alert', 'entity_id': 3, 'entity_type': 'transaction'});
-    //reports
-    await db.insert('reports', {'period_type': 'monthly', 'start_date': '2024-11-01', 'end_date': '2024-11-30', 'total_income': 1000.0, 'total_expense': 500.0, 'user_id': 1});
-    await db.insert('reports', {'period_type': 'monthly', 'start_date': '2024-12-01', 'end_date': '2024-12-31', 'total_income': 2000.0, 'total_expense': 1000.0, 'user_id': 1});
     //user category preferences
     await db.insert('user_category_preferences', {'user_id': 1, 'category_id': 1, 'preferred_budget': 100.0});
     await db.insert('user_category_preferences', {'user_id': 1, 'category_id': 2, 'preferred_budget': 50.0});
@@ -314,9 +336,14 @@ class DatabaseHelper {
     await db.insert('user_category_preferences', {'user_id': 1, 'category_id': 5, 'preferred_budget': 100.0});
     await db.insert('user_category_preferences', {'user_id': 1, 'category_id': 6, 'preferred_budget': 50.0});
     await db.insert('user_category_preferences', {'user_id': 1, 'category_id': 7, 'preferred_budget': 50.0});
+    // Insertar otros datos predeterminados (categories, icons, etc.)
+    // ...
+
+    // Registrar que los datos predeterminados se han insertado
+    await db.insert('app_metadata', {'key': 'example_data_initialized', 'value': 'true'});
+    print('Datos de ejemplo insertados con éxito.');
   }
-  //CRUD Operations for each model
-  //Crud for user
+
   Future<List<Map<String, dynamic>>> fetchUser() async {
     final db = await database;
     return await db.query('users');
@@ -337,7 +364,6 @@ class DatabaseHelper {
     return await db.query('users', where: 'id = ?', whereArgs: [row['id']]);
   }
 
-  //the update of a budget goal is the result of the sum of all the budgets of the user
   Future<int> updateUserBudgetGoal(int userId) async {
     final db = await database;
     final List<Map<String, dynamic>> budgets = await db.rawQuery('''
@@ -353,13 +379,11 @@ class DatabaseHelper {
     ''', [totalBudget, userId]);
   }
 
-  //insert transaction
   Future<int> insertTransaction(Map<String, dynamic> row) async {
     final db = await database;
     return await db.insert('transactions', row);
   }
 
-  //get categories
   Future<List<Map<String, dynamic>>> fetchCategories() async {
     final db = await database;
     return await db.query('categories');
